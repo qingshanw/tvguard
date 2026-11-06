@@ -80,18 +80,31 @@ public class PasswordActivity extends Activity {
             root.addView(inputConfirm, matchWrap(dp(0), dp(12)));
         }
 
-        // 密码输入框 + 右侧确认按钮(键盘回车/遥控器OK仍然可用)
+        // 密码输入框:确认键内嵌在输入框右端,视觉一体(键盘回车/遥控器OK仍然可用)
         LinearLayout inputRow = new LinearLayout(this);
         inputRow.setOrientation(LinearLayout.HORIZONTAL);
         inputRow.setGravity(Gravity.CENTER_VERTICAL);
+        android.graphics.drawable.GradientDrawable boxBg =
+                new android.graphics.drawable.GradientDrawable();
+        boxBg.setCornerRadius(dp(10));
+        boxBg.setColor(Color.parseColor("#1E3257"));
+        boxBg.setStroke(2, Color.parseColor("#3D5AFE"));
+        inputRow.setBackground(boxBg);
+        int inPad = dp(12);
+        inputRow.setPadding(inPad, dp(6), dp(6), dp(6));
 
         input = new EditText(this);
         input.setHint(mode == MODE_VERIFY ? "密码" : "新密码(4-8位数字)");
         input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER
                 | android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD);
-        styleInput(input);
+        input.setTextSize(TypedValue.COMPLEX_UNIT_PX, UiUtil.px(this, UiUtil.TEXT_OPTION));
+        input.setTextColor(Color.WHITE);
+        input.setHintTextColor(Color.parseColor("#607D8B"));
+        input.setGravity(Gravity.CENTER_VERTICAL);
+        input.setBackground(null);
+        input.setPadding(dp(8), 0, dp(8), 0);
         inputRow.addView(input, new LinearLayout.LayoutParams(
-                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+                0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
 
         android.widget.Button ok = new android.widget.Button(this,
                 null, android.R.attr.borderlessButtonStyle);
@@ -100,11 +113,11 @@ public class PasswordActivity extends Activity {
         ok.setTextColor(Color.WHITE);
         ok.setAllCaps(false);
         ok.setIncludeFontPadding(false);
-        ok.setPadding(dp(24), dp(12), dp(24), dp(12));
-        ok.setMinimumHeight(dp(56));
+        ok.setPadding(dp(24), dp(10), dp(24), dp(10));
+        ok.setMinimumHeight(dp(52));
         android.graphics.drawable.GradientDrawable okBg =
                 new android.graphics.drawable.GradientDrawable();
-        okBg.setCornerRadius(dp(10));
+        okBg.setCornerRadius(dp(8));
         okBg.setColor(Color.parseColor("#2E63E7"));
         ok.setBackground(okBg);
         ok.setFocusable(true);
@@ -114,10 +127,8 @@ public class PasswordActivity extends Activity {
                 submit();
             }
         });
-        LinearLayout.LayoutParams okLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        okLp.leftMargin = dp(12);
-        inputRow.addView(ok, okLp);
+        inputRow.addView(ok, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         root.addView(inputRow, matchWrap(dp(0), dp(12)));
 
         tvError = new TextView(this);
