@@ -40,6 +40,8 @@ public class StatsActivity extends Activity {
     private LinearLayout listBox;
     private TextView tvSummary;
     private QuestionBank bank;
+    private boolean sortByRate = false; // false=按答题次数(默认), true=按正确率
+    private TextView tvSortBtn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -125,6 +127,30 @@ public class StatsActivity extends Activity {
         btnRow.setOrientation(LinearLayout.HORIZONTAL);
         btnRow.setGravity(Gravity.CENTER);
 
+        // 排序切换:默认按答题次数,可切到按正确率
+        tvSortBtn = new TextView(this);
+        tvSortBtn.setText(sortByRate ? "排序:正确率(低→高) ▾" : "排序:答题次数(多→少) ▾");
+        tvSortBtn.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(26));
+        tvSortBtn.setTextColor(Color.parseColor(MainActivity.ACCENT_CYAN));
+        tvSortBtn.setPadding(dp(20), dp(10), dp(20), dp(10));
+        GradientDrawable sg = new GradientDrawable();
+        sg.setCornerRadius(dp(28));
+        sg.setColor(Color.parseColor("#233B60"));
+        tvSortBtn.setBackground(sg);
+        tvSortBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                sortByRate = !sortByRate;
+                tvSortBtn.setText(sortByRate
+                        ? "排序:正确率(低→高) ▾" : "排序:答题次数(多→少) ▾");
+                refresh();
+            }
+        });
+        LinearLayout.LayoutParams sortLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        sortLp.rightMargin = dp(16);
+        btnRow.addView(tvSortBtn, sortLp);
+
         Button reset = new Button(this, null, android.R.attr.borderlessButtonStyle);
         reset.setText("重置全部统计");
         reset.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(26));
@@ -187,15 +213,26 @@ public class StatsActivity extends Activity {
         }
 
         List<QuestionBank.Question> all = bank.allQuestions();
-        // 排序:未毕业在前,按答错次数降序;已毕业在最后
+        final boolean byRate = sortByRate;
+        // 排序:未毕业在前、已毕业垫底;
+        //   默认(次数模式):答题次数多的在前;
+        //   正确率模式:正确率低的在前(最容易错的先看到),未作答的排在本组最后
         Collections.sort(all, new Comparator<QuestionBank.Question>() {
             @Override
             public int compare(QuestionBank.Question a, QuestionBank.Question b) {
                 boolean ga = stats.graduated(a.id), gb = stats.graduated(b.id);
                 if (ga != gb) return ga ? 1 : -1;
-                int wa = stats.attempts(a.id) - stats.correct(a.id);
-                int wb = stats.attempts(b.id) - stats.correct(b.id);
-                return wb - wa;
+                int attA = stats.attempts(a.id), attB = stats.attempts(b.id);
+                if (byRate) {
+                    int rateA = attA == 0 ? Integer.MAX_VALUE
+                            : stats.correct(a.id) * 100 / attA;
+                    int rateB = attB == 0 ? Integer.MAX_VALUE
+                            : stats.correct(b.id) * 100 / attB;
+                    if (rateA != rateB) return rateA - rateB;
+                    return attB - attA;
+                }
+                if (attA != attB) return attB - attA; // 答题次数多的在前
+                return 0;
             }
         });
 
