@@ -608,14 +608,85 @@ public class MainActivity extends Activity {
     }
 
     private String buildDiagText() {
-        boolean saw = Build.VERSION.SDK_INT >= 23 && Settings.canDrawOverlays(this);
-        return "诊断[" + android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL
-                + " / Android " + android.os.Build.VERSION.RELEASE + "]: 服务"
-                + (MonitorService.isServiceAliveForDiag() ? "√" : "×")
-                + " | 悬浮窗权限" + (saw ? "√" : "×")
-                + " | Activity创建" + QuizActivity.createCount
-                + "次/获焦点" + QuizActivity.focusCount + "次"
-                + " | 弹窗失败" + MonitorService.getDisplayFailCount() + "次";
+        StringBuilder sb = new StringBuilder();
+        try {
+            // 设备与系统
+            android.util.DisplayMetrics dm = getResources().getDisplayMetrics();
+            int orientation = getResources().getConfiguration().orientation;
+            sb.append("【设备】").append(Build.MANUFACTURER).append(" ").append(Build.MODEL)
+                    .append(" / Android ").append(Build.VERSION.RELEASE)
+                    .append(" (SDK").append(Build.VERSION.SDK_INT).append(")\n");
+            sb.append("【屏幕】").append(dm.widthPixels).append("x").append(dm.heightPixels)
+                    .append(" @").append(dm.densityDpi).append("dpi | ")
+                    .append(orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+                            ? "横屏" : "竖屏")
+                    .append(" | 亮屏:").append(isScreenOnNow() ? "√" : "×")
+                    .append("\n");
+
+            // 版本
+            sb.append("【版本】v").append(appVersion()).append("\n");
+
+            // 权限检测
+            boolean overlayOk = Build.VERSION.SDK_INT < 23 || Settings.canDrawOverlays(this);
+            boolean notifOk = isNotificationOk();
+            android.os.PowerManager pm = (android.os.PowerManager) getSystemService(POWER_SERVICE);
+            boolean batteryOk = pm != null
+                    && pm.isIgnoringBatteryOptimizations(getPackageName());
+            boolean bgOk = prefs.getBool(Prefs.KEY_BG_CONFIRMED, false);
+            sb.append("【权限】悬浮窗").append(overlayOk ? "√" : "×")
+                    .append(" 通知").append(notifOk ? "√" : "×")
+                    .append(" 电池白名单").append(batteryOk ? "√" : "×")
+                    .append(" 后台(手动)").append(bgOk ? "√" : "×")
+                    .append("\n");
+
+            // 服务与计时状态
+            long lockUntil = prefs.getLong(Prefs.KEY_LOCK_UNTIL, 0);
+            int watched = prefs.getInt(Prefs.KEY_WATCHED, 0);
+            int pending = prefs.getInt(Prefs.KEY_QUIZ_PENDING, 0);
+            String state = lockUntil > System.currentTimeMillis() ? "休息锁定中"
+                    : (pending == 1 ? "待答题" : "正常计时");
+            sb.append("【服务】运行").append(MonitorService.isServiceAliveForDiag() ? "√" : "×")
+                    .append(" | 状态:").append(state)
+                    .append(" | 已看:").append(watched).append("秒/间隔:")
+                    .append(prefs.intervalSec()).append("秒\n");
+
+            // 弹窗通道
+            sb.append("【弹窗】Activity创建").append(QuizActivity.createCount)
+                    .append("/聚焦").append(QuizActivity.focusCount)
+                    .append(" | 悬浮窗失败").append(MonitorService.getDisplayFailCount())
+                    .append(" | 悬浮窗显示中:").append(MonitorService.isOverlayActive() ? "√" : "×")
+                    .append("\n");
+
+            // 题库
+            QuestionBank bank = new QuestionBank(this);
+            int total = bank.load(this);
+            sb.append("【题库】共").append(total).append(" 待答").append(bank.activeCount())
+                    .append(" 毕业").append(bank.graduatedCount())
+                    .append(" | 局域网:").append(lanServer != null && lanServer.isRunning() ? "√" : "×");
+        } catch (Throwable t) {
+            sb.append("诊断信息采集异常: ").append(t);
+        }
+        return sb.toString();
+    }
+
+    private boolean isScreenOnNow() {
+        android.os.PowerManager pm = (android.os.PowerManager) getSystemService(POWER_SERVICE);
+        return pm == null || pm.isInteractive();
+    }
+
+    private boolean isNotificationOk() {
+        try {
+            if (Build.VERSION.SDK_INT >= 33
+                    && checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+                    != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                return false;
+            }
+            android.app.NotificationManager nm =
+                    (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            return Build.VERSION.SDK_INT < 24 || nm == null || nm.areNotificationsEnabled();
+        } catch (Throwable t) {
+            return false;
+        }
     }
 
     /** 打开各厂商的后台权限设置页(自启动/后台弹出/关联启动),失败则退回应用详情。 */
