@@ -41,10 +41,9 @@
 
 **4.「通知权限」**——下拉通知栏会常驻一条**状态条幅**,实时显示「已观看 X分XX秒 · 下轮答题倒计时」,既是后台保活手段,也让家长随时掌握观看时长:
 
-| 1. 显示在其他应用的上层 | 2. 启动管理(三项全开) |
-|:---:|:---:|
-| <img src="capture/perm-overlay.jpg" width="300"/> | <img src="capture/perm-startup.jpg" width="300"/> |
-| **4. 通知权限 · 常驻状态条幅**<br><img src="capture/notif-banner.jpg" width="300"/> | |
+| 1. 显示在其他应用的上层 | 2. 启动管理(三项全开) | 4. 通知权限 · 常驻状态条幅 |
+|:---:|:---:|:---:|
+| <img src="capture/perm-overlay.jpg" width="280"/> | <img src="capture/perm-startup.jpg" width="280"/> | <img src="capture/notif-banner.jpg" width="280"/> |
 
 ### 各品牌「后台运行权限」在哪
 
