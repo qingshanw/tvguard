@@ -503,8 +503,6 @@ public class MainActivity extends Activity {
                     }
                 })));
 
-        TextView hint = smallLabel("提示:弹题后答对才能继续;答错达到上限锁定休息;\n连续答错会累计,答对即清零。");
-        colLeft.addView(wrapLoose(hint));
 
         // ===== 右栏:题库与状态 =====
         // 弹窗被系统拦截的智能提示(国产ROM需要「后台弹出界面」权限,无统一API,只能症状检测)
