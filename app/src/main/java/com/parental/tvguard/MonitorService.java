@@ -212,6 +212,10 @@ public class MonitorService extends Service {
         if (screenOn && configUiCount.get() == 0 && !quizShowing && overlayView == null
                 && prefs.getInt(Prefs.KEY_QUIZ_PENDING, 0) == 0) {
             long t = SystemClock.elapsedRealtime();
+            // 答题/锁定期间的时间一律不计:若上次结算点早于答题结束时刻,从答题结束时刻起算
+            if (quizClosedAt > 0 && lastTickRealtime < quizClosedAt) {
+                lastTickRealtime = quizClosedAt;
+            }
             int delta = (int) ((t - lastTickRealtime) / 1000);
             lastTickRealtime = t;
             // delta 大于1秒说明tick被延迟(ROM冻结/省电),亮屏期间该段时间孩子同样在看电视,
@@ -303,6 +307,7 @@ public class MonitorService extends Service {
         MonitorService s = sInstance;
         if (s != null) {
             s.pendingSince = 0;
+            quizClosedAt = SystemClock.elapsedRealtime(); // 答对:从此刻起才恢复计时
             s.sendMediaKey(KeyEvent_PLAY());
             s.removeOverlay();
             s.quizShowing = false;
@@ -327,6 +332,7 @@ public class MonitorService extends Service {
 
     private void onLockExpired() {
         Log.i(TAG, "锁定结束,恢复");
+        quizClosedAt = SystemClock.elapsedRealtime(); // 锁定结束:从此刻起才恢复计时
         Prefs prefs = new Prefs(this);
         prefs.putInt(Prefs.KEY_QUIZ_PENDING, 0);
         sendMediaKey(KeyEvent_PLAY());
@@ -385,6 +391,7 @@ public class MonitorService extends Service {
 
     private void removeOverlay() {
         overlayActive = false;
+        quizClosedAt = SystemClock.elapsedRealtime(); // 悬浮窗关闭:从此之后才恢复计时
         if (overlayView != null) {
             try {
                 wm.removeView(overlayView);
@@ -456,6 +463,7 @@ public class MonitorService extends Service {
     private static volatile int displayFailCount = 0; // 弹窗连续发送失败次数(供界面提示权限问题)
     private static volatile long pendingSince = 0;    // 弹题开始等待显示的时刻(elapsedRealtime)
     private static volatile long overlayShownAt = 0;  // 悬浮窗添加时刻(用于识别"被压制不可见")
+    private static volatile long quizClosedAt = 0;    // 答题界面关闭时刻(答题期间绝不计时)
     private static volatile long lastOverlayTouch = 0; // 悬浮窗最近一次被点击(作答中不动它)
 
     public static int getDisplayFailCount() {
