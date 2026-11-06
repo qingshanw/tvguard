@@ -37,8 +37,14 @@ public class QuizActivity extends Activity {
                 | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
         MonitorService.quizShowing = true; // 与服务握手
         sRunning = this;
-        // 弹窗真正显示,本轮观看时间清零
+        // 弹窗真正显示,本轮观看时间清零,并撤销拦截提醒
         new Prefs(this).putInt(Prefs.KEY_WATCHED, 0);
+        try {
+            android.app.NotificationManager nm =
+                    (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            if (nm != null) nm.cancel(2);
+        } catch (Exception ignored) {
+        }
         tryPinScreen(); // 屏幕固定:固定期间主页/返回/最近任务全部失效
 
         Prefs prefs = new Prefs(this);
