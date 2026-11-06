@@ -45,6 +45,12 @@
             android:exported="false"
             android:screenOrientation="landscape" />
 
+        <!-- 权限配置 -->
+        <activity
+            android:name=".PermissionActivity"
+            android:exported="false"
+            android:screenOrientation="landscape" />
+
         <!-- 答题统计(家长) -->
         <activity
             android:name=".StatsActivity"

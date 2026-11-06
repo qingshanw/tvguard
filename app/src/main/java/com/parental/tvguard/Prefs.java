@@ -33,6 +33,7 @@ public final class Prefs {
     public static final String KEY_FORCE_LOCK = "force_lock_sec";   // 强制休息时长(秒)
     public static final String KEY_BOOT_START = "boot_start";       // 开机自启
     public static final String KEY_EMBED_GRADE4 = "embed_grade4";   // 内嵌四年级题库启用(默认开)
+    public static final String KEY_BG_CONFIRMED = "bg_confirmed";   // 后台运行权限已手动确认
 
     // 运行状态(重启后接续)
     public static final String KEY_WATCHED = "watched_sec";         // 本轮已观看秒数
