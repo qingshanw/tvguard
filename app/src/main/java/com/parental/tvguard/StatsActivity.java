@@ -206,7 +206,8 @@ public class StatsActivity extends Activity {
 
     private LinearLayout questionCard(QuestionBank.Question q, QuestionStats stats) {
         LinearLayout c = new LinearLayout(this);
-        c.setOrientation(LinearLayout.VERTICAL);
+        c.setOrientation(LinearLayout.HORIZONTAL);
+        c.setGravity(android.view.Gravity.CENTER_VERTICAL);
         int pad = dp(14);
         c.setPadding(pad, pad, pad, pad);
         c.setBackground(roundBg(MainActivity.CARD, dp(12)));
@@ -220,22 +221,66 @@ public class StatsActivity extends Activity {
         int cor = stats.correct(q.id);
         int wrong = att - cor;
 
+        // 左侧:题目 + 答对/答错次数
+        LinearLayout left = new LinearLayout(this);
+        left.setOrientation(LinearLayout.VERTICAL);
+        left.setLayoutParams(new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
         TextView title = new TextView(this);
         title.setText((grad ? "🏆 " : "📝 ") + q.q);
         title.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(26));
         title.setTextColor(Color.WHITE);
         title.setMaxLines(2);
-        c.addView(title);
+        left.addView(title);
 
-        TextView line2 = new TextView(this);
-        String rate = att == 0 ? "未作答" : "正确率 " + (cor * 100 / att) + "%";
-        line2.setText("答对 " + cor + " 次 | 答错 " + wrong + " 次 | " + rate
-                + (grad ? " | 已毕业" : ""));
-        line2.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(22));
-        line2.setTextColor(grad ? Color.parseColor("#66BB6A") : Color.parseColor("#90CAF9"));
-        line2.setPadding(0, dp(6), 0, 0);
-        c.addView(line2);
+        TextView counts = new TextView(this);
+        counts.setText("答对 " + cor + " 次 | 答错 " + wrong + " 次");
+        counts.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(22));
+        counts.setTextColor(Color.parseColor("#90CAF9"));
+        counts.setPadding(0, dp(6), 0, 0);
+        left.addView(counts);
 
+        c.addView(left);
+
+        // 右侧:作答状态 + 正确率(一眼可见)
+        LinearLayout right = new LinearLayout(this);
+        right.setOrientation(LinearLayout.VERTICAL);
+        right.setGravity(android.view.Gravity.CENTER);
+        int rp = dp(10);
+        right.setPadding(dp(16), rp, dp(16), rp);
+        android.graphics.drawable.GradientDrawable rbg =
+                new android.graphics.drawable.GradientDrawable();
+        rbg.setCornerRadius(dp(10));
+        rbg.setColor(Color.parseColor(grad ? "#0E2B22" : "#182B4D"));
+        right.setBackground(rbg);
+        right.setLayoutParams(new LinearLayout.LayoutParams(
+                dp(210), ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        TextView rateView = new TextView(this);
+        if (att == 0) {
+            rateView.setText("--");
+            rateView.setTextColor(Color.parseColor("#78909C"));
+        } else {
+            int ratePct = cor * 100 / att;
+            rateView.setText(ratePct + "%");
+            rateView.setTextColor(Color.parseColor(
+                    ratePct >= 60 ? "#66BB6A" : (ratePct >= 30 ? "#FFB74D" : "#E57373")));
+        }
+        rateView.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(34));
+        rateView.setTypeface(null, Typeface.BOLD);
+        rateView.setGravity(android.view.Gravity.CENTER);
+        right.addView(rateView);
+
+        TextView stateView = new TextView(this);
+        stateView.setText(att == 0 ? "未作答" : (grad ? "已毕业" : "已作答"));
+        stateView.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(22));
+        stateView.setTextColor(Color.parseColor(
+                grad ? "#66BB6A" : (att == 0 ? "#78909C" : "#90CAF9")));
+        stateView.setGravity(android.view.Gravity.CENTER);
+        right.addView(stateView);
+
+        c.addView(right);
         return c;
     }
 
