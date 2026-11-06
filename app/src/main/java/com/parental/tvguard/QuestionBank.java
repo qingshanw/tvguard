@@ -113,15 +113,23 @@ public final class QuestionBank {
     private void parseInto(JSONArray arr, String src) throws Exception {
         for (int i = 0; i < arr.length(); i++) {
             JSONObject o = arr.getJSONObject(i);
-            String q = o.optString("q", "").trim();
+            String q = normalizeNewlines(o.optString("q", "").trim());
             JSONArray opts = o.optJSONArray("options");
             int ans = o.optInt("answer", -1);
             if (q.isEmpty() || opts == null || opts.length() < 2) continue;
             if (ans < 0 || ans >= opts.length()) continue;
             String[] os = new String[opts.length()];
-            for (int j = 0; j < opts.length(); j++) os[j] = opts.optString(j, "").trim();
+            for (int j = 0; j < opts.length(); j++) {
+                os[j] = normalizeNewlines(opts.optString(j, "").trim());
+            }
             questions.add(new Question(src + ":" + i, q, os, ans));
         }
+    }
+
+    /** 题库里常写字面量 "\n"(反斜杠+n)表示换行,统一转成真正的换行符。 */
+    private static String normalizeNewlines(String text) {
+        if (text == null) return "";
+        return text.replace("\\n", "\n");
     }
 
     public synchronized int size() {

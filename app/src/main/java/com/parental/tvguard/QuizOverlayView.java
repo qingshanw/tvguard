@@ -77,21 +77,25 @@ public class QuizOverlayView extends android.widget.FrameLayout {
         tvTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, UiUtil.px(getContext(), UiUtil.TEXT_TITLE));
         tvTitle.setTextColor(Color.WHITE);
         tvTitle.setGravity(Gravity.CENTER);
-        root.addView(tvTitle);
+        root.addView(tvTitle, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         tvQuestion = new TextView(getContext());
         tvQuestion.setTextSize(TypedValue.COMPLEX_UNIT_PX, UiUtil.px(getContext(), UiUtil.TEXT_QUESTION));
         tvQuestion.setTextColor(Color.WHITE);
         tvQuestion.setGravity(Gravity.CENTER);
         tvQuestion.setPadding(0, dp(24), 0, dp(24));
-        root.addView(tvQuestion);
+        // 显式占满宽度,长题目按可用宽度自动换行(也保留题库中的手动换行)
+        root.addView(tvQuestion, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         tvFeedback = new TextView(getContext());
         tvFeedback.setTextSize(TypedValue.COMPLEX_UNIT_PX, UiUtil.px(getContext(), UiUtil.TEXT_OPTION));
         tvFeedback.setTextColor(Color.parseColor("#FFD54F"));
         tvFeedback.setGravity(Gravity.CENTER);
         tvFeedback.setVisibility(INVISIBLE);
-        root.addView(tvFeedback);
+        root.addView(tvFeedback, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         optionBox = new LinearLayout(getContext());
         optionBox.setOrientation(LinearLayout.VERTICAL);
