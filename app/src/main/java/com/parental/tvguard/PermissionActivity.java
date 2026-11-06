@@ -118,7 +118,9 @@ public class PermissionActivity extends Activity {
         final boolean bgOk = new Prefs(this).getBool(Prefs.KEY_BG_CONFIRMED, false);
         listBox.addView(permRow(
                 "后台运行权限",
-                "把「允许自启动 / 允许关联启动 / 允许后台活动」全部打开,\n否则孩子看视频时弹题会被系统拦截。",
+                "把「允许自启动 / 允许关联启动 / 允许后台活动」全部打开,\n"
+                        + "通常在系统管家/手机管家的「应用启动管理」或「自启动」里,\n"
+                        + "不在应用信息页;华为/荣耀/小米/OPPO/vivo 路径见使用说明。",
                 bgOk,
                 bgOk ? null : "去设置",
                 bgOk ? null : new View.OnClickListener() {
