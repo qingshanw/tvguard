@@ -62,3 +62,12 @@
 
 正式版使用项目根目录 `release.keystore` 签名(alias `tvguard`,密码 `tvguard2024`)。
 **请妥善保管该文件**:签名不一致将无法覆盖安装。构建正式版:`gradlew assembleRelease`。
+
+
+## 作者
+
+**WangQingshan** — [github.com/qingshanw](https://github.com/qingshanw)
+
+## 开源许可
+
+Apache License 2.0 — Copyright (c) 2026 WangQingshan

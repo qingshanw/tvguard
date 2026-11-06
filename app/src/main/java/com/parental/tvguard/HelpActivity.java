@@ -1,3 +1,14 @@
+/*
+ * 视界守卫者 (Focus Quiz Guard) - 儿童电视防沉迷
+ * Copyright (c) 2026 WangQingshan (https://github.com/qingshanw)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ */
+
 package com.parental.tvguard;
 
 import android.app.Activity;
@@ -91,7 +102,7 @@ public class HelpActivity extends Activity {
             v = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
         } catch (Exception ignored) {
         }
-        ver.setText("视界守卫者 v" + v);
+        ver.setText("视界守卫者 v" + v + " · by WangQingshan");
         ver.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(22));
         ver.setTextColor(Color.parseColor("#546E7A"));
         ver.setGravity(Gravity.CENTER);
