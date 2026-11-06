@@ -37,17 +37,14 @@
 **2.「启动管理」三项全开**——允许自启动、允许关联启动、允许后台活动
 (华为/荣耀:设置 → 应用 → 应用启动管理 → 视界守卫者 → 手动管理;小米:「自启动」+「后台弹出界面」;OPPO/vivo 类似名称)
 
-| 1. 显示在其他应用的上层 | 2. 启动管理(三项全开) |
-|:---:|:---:|
-| <img src="capture/perm-overlay.jpg" width="300"/> | <img src="capture/perm-startup.jpg" width="300"/> |
-
 **3.「电池优化」加入白名单**——设置页有「加入电池白名单」按钮,防止省电策略冻结后台计时。
 
 **4.「通知权限」**——下拉通知栏会常驻一条**状态条幅**,实时显示「已观看 X分XX秒 · 下轮答题倒计时」,既是后台保活手段,也让家长随时掌握观看时长:
 
-<p align="center">
-  <img src="capture/notif-banner.jpg" width="300" alt="通知栏常驻状态条幅">
-</p>
+| 1. 显示在其他应用的上层 | 2. 启动管理(三项全开) |
+|:---:|:---:|
+| <img src="capture/perm-overlay.jpg" width="300"/> | <img src="capture/perm-startup.jpg" width="300"/> |
+| **4. 通知权限 · 常驻状态条幅**<br><img src="capture/notif-banner.jpg" width="300"/> | |
 
 ### 各品牌「后台运行权限」在哪
 

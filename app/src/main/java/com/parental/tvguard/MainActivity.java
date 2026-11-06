@@ -137,6 +137,14 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    public void onConfigurationChanged(android.content.res.Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // 旋转时不再重建Activity(manifest已声明configChanges),解锁状态得以保留;
+        // 界面在这里按新方向自行重建(buildUi末尾会按unlocked重刷内容)
+        buildUi();
+    }
+
+    @Override
     protected void onStop() {
         super.onStop();
         // 仅在真正离开前台(回桌面/息屏/切其他应用)时上锁;
