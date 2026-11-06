@@ -143,4 +143,21 @@ public final class QuestionStats {
         }
         saveAsync();
     }
+
+    /** 删除题库后清理该题库所有题目的统计(id = 题库文件名:序号,按前缀匹配)。 */
+    public void removeBank(String bankName) {
+        if (bankName == null || bankName.isEmpty()) return;
+        String prefix = bankName + ":";
+        synchronized (LOCK) {
+            boolean changed = false;
+            java.util.Iterator<String> it = data.keys();
+            while (it.hasNext()) {
+                if (it.next().startsWith(prefix)) {
+                    it.remove();
+                    changed = true;
+                }
+            }
+            if (changed) saveAsync();
+        }
+    }
 }

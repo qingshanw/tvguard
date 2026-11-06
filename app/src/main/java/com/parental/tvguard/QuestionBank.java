@@ -87,13 +87,15 @@ public final class QuestionBank {
             }
         }
 
-        // 已导入题库
+        // 已导入题库(禁用的跳过)
+        java.util.Set<String> disabled = disabledBanks(ctx);
         File dir = new File(ctx.getFilesDir(), BANK_DIR);
         File[] files = dir.listFiles();
         if (files != null) {
             java.util.Arrays.sort(files);
             for (File f : files) {
                 if (!f.getName().toLowerCase().endsWith(".json")) continue;
+                if (disabled.contains(f.getName())) continue; // 家长已禁用该题库
                 try {
                     String text = readFile(f);
                     JSONObject root = new JSONObject(text);
@@ -235,7 +237,76 @@ public final class QuestionBank {
 
     public static boolean deleteBank(Context ctx, String fileName) {
         File f = new File(new File(ctx.getFilesDir(), BANK_DIR), fileName);
-        return f.delete();
+        boolean ok = f.delete();
+        if (ok) {
+            // 同步清理:该题库所有题目的答题统计 + 禁用列表里的残留项
+            QuestionStats.getInstance(ctx).removeBank(fileName);
+            setBankEnabled(ctx, fileName, true);
+        }
+        return ok;
+    }
+
+    // ---- 题库启用/禁用管理 ----
+
+    /** 已禁用的导入题库文件名集合。 */
+    public static java.util.Set<String> disabledBanks(Context ctx) {
+        java.util.Set<String> out = new java.util.HashSet<>();
+        String s = new Prefs(ctx).getString(Prefs.KEY_DISABLED_BANKS, "");
+        for (String part : s.split(",")) {
+            if (!part.trim().isEmpty()) out.add(part.trim());
+        }
+        return out;
+    }
+
+    /** 启用/禁用一个导入题库(禁用后文件保留,不再参与出题,统计保留)。 */
+    public static void setBankEnabled(Context ctx, String fileName, boolean enabled) {
+        java.util.Set<String> set = disabledBanks(ctx);
+        if (enabled) set.remove(fileName);
+        else set.add(fileName);
+        StringBuilder sb = new StringBuilder();
+        for (String s : set) {
+            if (sb.length() > 0) sb.append(',');
+            sb.append(s);
+        }
+        new Prefs(ctx).putString(Prefs.KEY_DISABLED_BANKS, sb.toString());
+    }
+
+    /** 全部已导入题库文件名(含已禁用的,按文件名排序)。 */
+    public static java.util.List<String> allBankFiles(Context ctx) {
+        java.util.List<String> out = new ArrayList<>();
+        File dir = new File(ctx.getFilesDir(), BANK_DIR);
+        File[] files = dir.listFiles();
+        if (files != null) {
+            java.util.Arrays.sort(files);
+            for (File f : files) {
+                if (f.getName().toLowerCase().endsWith(".json")) out.add(f.getName());
+            }
+        }
+        return out;
+    }
+
+    /** 统计一个题库文件中的有效题数;解析失败返回 -1。 */
+    public static int bankQuestionCount(Context ctx, String fileName) {
+        try {
+            JSONObject root = new JSONObject(readFile(
+                    new File(new File(ctx.getFilesDir(), BANK_DIR), fileName)));
+            JSONArray arr = root.optJSONArray("questions");
+            if (arr == null) return 0;
+            int n = 0;
+            for (int i = 0; i < arr.length(); i++) {
+                JSONObject o = arr.getJSONObject(i);
+                JSONArray opts = o.optJSONArray("options");
+                int ans = o.optInt("answer", -1);
+                if (!o.optString("q", "").trim().isEmpty()
+                        && opts != null && opts.length() >= 2
+                        && ans >= 0 && ans < opts.length()) {
+                    n++;
+                }
+            }
+            return n;
+        } catch (Exception e) {
+            return -1;
+        }
     }
 
     private static String sanitizeName(String name) {

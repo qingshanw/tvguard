@@ -101,6 +101,7 @@ AlarmReceiver(60秒看门狗) ──→ 唤醒进程 + 补执行逾期的界面�
 
 - 格式：`{ "version": 1, "questions": [ {"q": "...", "options": ["A","B"], "answer": 0} ] }`，UTF-8，`answer` 是**从 0 开始的下标**。
 - 来源：assets 内嵌 `grade4_bank.json`（可用 `Prefs.KEY_EMBED_GRADE4` 停用）+ 用户导入的 `files/questions/*.json`。
+- **题库级管理**（`BankActivity`）：每个题库可启用/禁用/删除。禁用列表存 `Prefs.KEY_DISABLED_BANKS`（逗号分隔文件名），`QuestionBank.load()` 跳过禁用的文件；禁用保留文件与统计，删除则连该题库的答题统计一并清除（`QuestionStats.removeBank`，按 id 前缀匹配）；删除按钮需二次确认（`pendingDeleteName`）。
 - `QuestionBank.importBank(ctx, fileName, jsonText)` 校验全部题目后才落盘，文件名前加时间戳（`sanitizeName`），多次导入会共存、随机混抽。
 - **题目 id = 来源名 + ":" + 文件内序号**（如 `四年级题库:12`）。`QuestionStats` 按这个 id 记录答对/答错次数，答对 5 次（`QuestionStats.RETIRE_AFTER`）该题"毕业"不再出现。
 - `QuestionStats` 是**进程级单例**（`getInstance`），统计持久化在 `files/question_stats.json`，写入用临时文件 + rename 原子替换。

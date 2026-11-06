@@ -28,7 +28,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 /**
- * 题库管理:内嵌四年级题库(可删除/恢复)、查看已导入题库、删除、从U盘导入。
+ * 题库管理:内嵌四年级题库(可禁用/启用)、查看已导入题库、启用/禁用、删除(二次确认)、从U盘导入。
  */
 public class BankActivity extends Activity {
 
@@ -36,6 +36,7 @@ public class BankActivity extends Activity {
 
     private LinearLayout listBox;
     private TextView tvSummary;
+    private String pendingDeleteName; // 待二次确认删除的题库文件名
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -211,36 +212,37 @@ public class BankActivity extends Activity {
                 ? ("⚠ " + err)
                 : ("当前生效题库共 " + total + " 题"));
 
-        // 内嵌四年级题库(删除=停用,可恢复)
+        // 内嵌四年级题库(禁用=不参与出题,可随时恢复)
         final boolean grade4On = QuestionBank.isGrade4Enabled(this);
         LinearLayout emb = new LinearLayout(this);
         emb.setOrientation(LinearLayout.HORIZONTAL);
         emb.setGravity(Gravity.CENTER_VERTICAL);
         emb.setPadding(dp(14), dp(12), dp(14), dp(12));
-        emb.setBackground(roundBg("#0E2B22", dp(12)));
+        emb.setBackground(roundBg(grade4On ? "#0E2B22" : MainActivity.CARD, dp(12)));
 
         TextView embLabel = new TextView(this);
         embLabel.setText((grade4On ? "📗 " : "📕 ") + "四年级题库(内嵌 100 题)"
-                + (grade4On ? "" : "(已删除)"));
+                + (grade4On ? "" : " · 已禁用"));
         embLabel.setTextColor(Color.WHITE);
         embLabel.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(26));
         emb.addView(embLabel, new LinearLayout.LayoutParams(0,
                 ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
         Button embBtn = new Button(this, null, android.R.attr.borderlessButtonStyle);
-        embBtn.setText(grade4On ? "删除" : "恢复");
+        embBtn.setText(grade4On ? "禁用" : "启用");
         embBtn.setTextColor(Color.WHITE);
         embBtn.setAllCaps(false);
         embBtn.setIncludeFontPadding(false);
         embBtn.setPadding(dp(20), dp(8), dp(20), dp(8));
         embBtn.setMinimumHeight(dp(56));
-        embBtn.setBackground(roundBg(grade4On ? "#B71C1C" : "#2E7D32", dp(12)));
+        embBtn.setBackground(roundBg(grade4On ? "#8D6E63" : "#2E7D32", dp(12)));
         embBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 QuestionBank.setGrade4Enabled(BankActivity.this, !grade4On);
+                MonitorService.reloadBank(BankActivity.this);
                 Toast.makeText(BankActivity.this,
-                        grade4On ? "已删除内嵌四年级题库" : "已恢复内嵌四年级题库",
+                        grade4On ? "已禁用内嵌四年级题库" : "已启用内嵌四年级题库",
                         Toast.LENGTH_SHORT).show();
                 refresh();
             }
@@ -258,7 +260,7 @@ public class BankActivity extends Activity {
         importTitle.setPadding(0, dp(14), 0, dp(4));
         listBox.addView(importTitle);
 
-        if (bank.bankFileNames().isEmpty()) {
+        if (QuestionBank.allBankFiles(this).isEmpty()) {
             TextView empty = new TextView(this);
             empty.setText("暂无导入的题库。\n可从U盘导入,或在设置页开启局域网上传。");
             empty.setTextColor(Color.parseColor("#78909C"));
@@ -269,40 +271,81 @@ public class BankActivity extends Activity {
             return;
         }
 
-        for (final String name : bank.bankFileNames()) {
+        java.util.Set<String> disabled = QuestionBank.disabledBanks(this);
+        for (final String name : QuestionBank.allBankFiles(this)) {
+            final boolean enabled = !disabled.contains(name);
+            int count = QuestionBank.bankQuestionCount(this, name);
+
             LinearLayout row = new LinearLayout(this);
             row.setOrientation(LinearLayout.HORIZONTAL);
             row.setGravity(Gravity.CENTER_VERTICAL);
             row.setPadding(dp(14), dp(12), dp(14), dp(12));
-            row.setBackground(roundBg(MainActivity.CARD, dp(12)));
+            row.setBackground(roundBg(enabled ? MainActivity.CARD : "#2A2A2A", dp(12)));
             LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             rp.topMargin = dp(10);
             row.setLayoutParams(rp);
 
             TextView label = new TextView(this);
-            label.setText(shortName(name));
-            label.setTextColor(Color.WHITE);
+            label.setText(shortName(name)
+                    + (count >= 0 ? " · " + count + "题" : " · 解析失败")
+                    + (enabled ? "" : " · 已禁用"));
+            label.setTextColor(enabled ? Color.WHITE : Color.parseColor("#9E9E9E"));
             label.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(26));
             label.setSingleLine(true);
             row.addView(label, new LinearLayout.LayoutParams(0,
                     ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
+            // 启用/禁用切换(禁用保留文件与统计,只是不出题)
+            Button toggle = new Button(this, null, android.R.attr.borderlessButtonStyle);
+            toggle.setText(enabled ? "禁用" : "启用");
+            toggle.setTextColor(Color.WHITE);
+            toggle.setAllCaps(false);
+            toggle.setIncludeFontPadding(false);
+            toggle.setPadding(dp(16), dp(8), dp(16), dp(8));
+            toggle.setMinimumHeight(dp(56));
+            toggle.setBackground(roundBg(enabled ? "#8D6E63" : "#2E7D32", dp(12)));
+            toggle.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    QuestionBank.setBankEnabled(BankActivity.this, name, !enabled);
+                    MonitorService.reloadBank(BankActivity.this);
+                    Toast.makeText(BankActivity.this,
+                            enabled ? "已禁用,该题库不再出题" : "已启用",
+                            Toast.LENGTH_SHORT).show();
+                    refresh();
+                }
+            });
+            row.addView(toggle, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+            // 删除(二次确认:第一击变"确认删除?",再击才真正删除)
             Button del = new Button(this, null, android.R.attr.borderlessButtonStyle);
-            del.setText("删除");
+            del.setText(name.equals(pendingDeleteName) ? "确认删除?" : "删除");
             del.setTextColor(Color.WHITE);
             del.setAllCaps(false);
             del.setIncludeFontPadding(false);
-            del.setPadding(dp(20), dp(8), dp(20), dp(8));
+            del.setPadding(dp(16), dp(8), dp(16), dp(8));
             del.setMinimumHeight(dp(56));
-            del.setBackground(roundBg("#B71C1C", dp(12)));
+            del.setBackground(roundBg(name.equals(pendingDeleteName) ? "#FF5722" : "#B71C1C", dp(12)));
             del.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    QuestionBank.deleteBank(BankActivity.this, name);
-                    MonitorService.reloadBank(BankActivity.this);
-                    Toast.makeText(BankActivity.this, "已删除", Toast.LENGTH_SHORT).show();
-                    refresh();
+                    if (name.equals(pendingDeleteName)) {
+                        QuestionBank.deleteBank(BankActivity.this, name);
+                        MonitorService.reloadBank(BankActivity.this);
+                        pendingDeleteName = null;
+                        Toast.makeText(BankActivity.this, "已删除题库及其答题统计",
+                                Toast.LENGTH_SHORT).show();
+                        refresh();
+                    } else {
+                        pendingDeleteName = name;
+                        ((Button) v).setText("确认删除?");
+                        ((Button) v).setBackground(roundBg("#FF5722", dp(12)));
+                        Toast.makeText(BankActivity.this,
+                                "删除后该题库的答题统计也一并清除,再点一次确认",
+                                Toast.LENGTH_LONG).show();
+                    }
                 }
             });
             row.addView(del, new LinearLayout.LayoutParams(
