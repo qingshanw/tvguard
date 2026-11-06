@@ -53,6 +53,8 @@ public class MainActivity extends Activity {
     private LinearLayout colLeft;   // 左栏内容容器(在 ScrollView 内)
     private LinearLayout colRight;  // 右栏内容容器(在 ScrollView 内)
     private TextView tvWatchStatus; // 标题下方常驻状态栏(一眼可见)
+    private TextView tvDiag;        // 诊断详情(右栏底部,默认折叠)
+    private TextView tvDiagToggle;  // 诊断展开/收起开关
     private final android.os.Handler statusTick = new android.os.Handler();
     private final Runnable statusTicker = new Runnable() {
         @Override
@@ -220,50 +222,6 @@ public class MainActivity extends Activity {
         tvWatchStatus.setPadding(0, dp(4), 0, dp(4));
         root.addView(tvWatchStatus, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-
-        // 诊断开关(默认折叠,点击展开)——不喧宾夺主
-        TextView diagToggle = new TextView(this);
-        diagToggle.setText("▸ 诊断");
-        diagToggle.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(20));
-        diagToggle.setTextColor(Color.parseColor("#607D8B"));
-        diagToggle.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
-        diagToggle.setPadding(0, dp(2), dp(8), dp(2));
-        root.addView(diagToggle, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-
-        // 诊断详情(展开后可见):弹窗通道状态,排查"待显示"问题
-        TextView tvDiag = new TextView(this);
-        tvDiag.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(20));
-        tvDiag.setTextColor(Color.parseColor("#607D8B"));
-        tvDiag.setGravity(Gravity.CENTER);
-        tvDiag.setVisibility(View.GONE); // 默认折叠
-        root.addView(tvDiag, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        final TextView diagRef = tvDiag;
-        final TextView toggleRef = diagToggle;
-        diagRef.setText(buildDiagText());
-        diagRef.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                openVendorPermissionPage();
-            }
-        });
-        diagToggle.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                boolean show = diagRef.getVisibility() != View.VISIBLE;
-                diagRef.setVisibility(show ? View.VISIBLE : View.GONE);
-                toggleRef.setText(show ? "▾ 诊断" : "▸ 诊断");
-                if (show) diagRef.setText(buildDiagText());
-            }
-        });
-        statusTick.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                if (diagRef.getVisibility() == View.VISIBLE) diagRef.setText(buildDiagText());
-                statusTick.postDelayed(this, 1000);
-            }
-        }, 1000);
 
         boolean landscape = getResources().getConfiguration().orientation
                 == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
@@ -505,44 +463,12 @@ public class MainActivity extends Activity {
 
 
         // ===== 右栏:题库与状态 =====
-        // 弹窗被系统拦截的智能提示(国产ROM需要「后台弹出界面」权限,无统一API,只能症状检测)
-        if (MonitorService.getDisplayFailCount() >= 3) {
-            LinearLayout block = card(CARD_WARN);
-            TextView bt = new TextView(this);
-            bt.setText("⚠ 检测到弹窗被系统拦截!\n\n请到 系统设置 → 应用管理 → 视界守卫者,\n把「显示悬浮窗」和「后台弹出界面」都设为允许\n(不同品牌叫法略有不同)");
-            bt.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(26));
-            bt.setTextColor(Color.parseColor("#FFB74D"));
-            bt.setGravity(Gravity.CENTER);
-            bt.setPadding(0, dp(10), 0, dp(10));
-            block.addView(bt);
-            Button goDetail = bigButton("去系统设置(应用详情)", "#B26A00",
-                    new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            try {
-                                startActivity(new Intent(
-                                        android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                        android.net.Uri.parse("package:" + getPackageName())));
-                            } catch (Exception e) {
-                                Toast.makeText(MainActivity.this, "请手动到系统设置中开启", Toast.LENGTH_LONG).show();
-                            }
-                        }
-                    });
-            LinearLayout.LayoutParams gp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            gp.topMargin = dp(10);
-            block.addView(goDetail, gp);
-            colRight.addView(block);
-        }
-
         // 统一权限配置入口(内部逐项检测并打勾)
-        boolean overlayMissing = Build.VERSION.SDK_INT >= 23 && !Settings.canDrawOverlays(this);
-        LinearLayout permCard = card(overlayMissing ? CARD_WARN : CARD);
+        LinearLayout permCard = card(CARD);
         TextView permTitle = new TextView(this);
-        permTitle.setText(overlayMissing ? "⚠ 权限配置(有未开启项)" : "🔐 权限配置");
+        permTitle.setText("🔐 权限配置");
         permTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(28));
-        permTitle.setTextColor(overlayMissing
-                ? Color.parseColor("#FFB74D") : Color.WHITE);
+        permTitle.setTextColor(Color.WHITE);
         permTitle.setTypeface(null, Typeface.BOLD);
         permCard.addView(permTitle);
         TextView permDesc = new TextView(this);
@@ -552,7 +478,7 @@ public class MainActivity extends Activity {
         permDesc.setPadding(0, dp(6), 0, 0);
         permDesc.setLineSpacing(dp(4), 1f);
         permCard.addView(permDesc);
-        Button permBtn = bigButton("进入权限配置", overlayMissing ? "#B26A00" : ACCENT,
+        Button permBtn = bigButton("进入权限配置", ACCENT,
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -632,6 +558,41 @@ public class MainActivity extends Activity {
             lanCard.addView(hint);
         }
         colRight.addView(lanCard);
+
+        // 诊断(放在局域网上传下方,默认折叠)
+        tvDiagToggle = new TextView(this);
+        tvDiagToggle.setText("▸ 诊断");
+        tvDiagToggle.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(22));
+        tvDiagToggle.setTextColor(Color.parseColor("#607D8B"));
+        tvDiagToggle.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
+        tvDiagToggle.setPadding(0, dp(10), dp(8), dp(2));
+        colRight.addView(tvDiagToggle, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        tvDiag = new TextView(this);
+        tvDiag.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(20));
+        tvDiag.setTextColor(Color.parseColor("#607D8B"));
+        tvDiag.setGravity(Gravity.CENTER);
+        tvDiag.setVisibility(View.GONE);
+        tvDiag.setText(buildDiagText());
+        tvDiag.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openVendorPermissionPage();
+            }
+        });
+        colRight.addView(tvDiag, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        tvDiagToggle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                boolean show = tvDiag.getVisibility() != View.VISIBLE;
+                tvDiag.setVisibility(show ? View.VISIBLE : View.GONE);
+                tvDiagToggle.setText(show ? "▾ 诊断" : "▸ 诊断");
+                if (show) tvDiag.setText(buildDiagText());
+            }
+        });
 
         
         // 版本信息
@@ -714,6 +675,9 @@ public class MainActivity extends Activity {
         tvWatchStatus.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
         tvWatchStatus.setPadding(0, dp(2), dp(8), dp(2));
         tvWatchStatus.setText(txt);
+        if (tvDiag != null && tvDiag.getVisibility() == View.VISIBLE) {
+            tvDiag.setText(buildDiagText());
+        }
     }
 
     private String appVersion() {
