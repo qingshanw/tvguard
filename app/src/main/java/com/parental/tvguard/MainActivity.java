@@ -892,7 +892,13 @@ public class MainActivity extends Activity {
         val.setTextColor(Color.parseColor("#FFD54F"));
         val.setGravity(Gravity.CENTER);
         val.setMinWidth(dp(130));
-        val.setBackground(roundBg("#182742", dp(8))); // 提示可点击输入
+        // 明显的输入框样式:琥珀描边 + 深底 + 圆角,提示可点击直接输入
+        GradientDrawable valBg = new GradientDrawable();
+        valBg.setCornerRadius(dp(10));
+        valBg.setColor(Color.parseColor("#1B2C4C"));
+        valBg.setStroke(dp(2), Color.parseColor("#FFD54F"));
+        val.setBackground(valBg);
+        val.setPadding(dp(8), 0, dp(8), 0);
         val.setFocusable(true);
         val.setOnFocusChangeListener(focusGlow());
         val.setOnClickListener(new View.OnClickListener() {
