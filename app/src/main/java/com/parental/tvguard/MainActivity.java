@@ -596,17 +596,40 @@ public class MainActivity extends Activity {
                     lanServer.stop();
                 } else {
                     lanServer.start();
+                    Toast.makeText(MainActivity.this,
+                            "已开启,请手机/电脑浏览器访问 http://"
+                                    + LanServer.getLocalIp() + ":" + LanServer.PORT,
+                            Toast.LENGTH_LONG).show();
                 }
                 renderPanels();
             }
         }));
         if (lanOn) {
-            // 仅开启时显示上传地址(功能必需),未开启时不再显示提示小字
-            TextView lanTip = smallLabel("● 手机浏览器访问\n   http://"
-                    + LanServer.getLocalIp() + ":" + LanServer.PORT);
-            lanTip.setTextColor(Color.parseColor("#4FC3F7"));
-            lanTip.setPadding(0, dp(8), 0, 0);
-            lanCard.addView(lanTip);
+            // 开启时给出明确指引:提示家长在手机/电脑端访问该网页上传题库
+            TextView prompt = new TextView(this);
+            prompt.setText("📱 请家长在手机或电脑的浏览器中访问以下网页,上传题库文件:");
+            prompt.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(24));
+            prompt.setTextColor(Color.WHITE);
+            prompt.setLineSpacing(dp(4), 1f);
+            prompt.setPadding(0, dp(10), 0, dp(4));
+            lanCard.addView(prompt);
+
+            TextView urlView = new TextView(this);
+            urlView.setText("http://" + LanServer.getLocalIp() + ":" + LanServer.PORT);
+            urlView.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(36));
+            urlView.setTextColor(Color.parseColor("#4FC3F7"));
+            urlView.setTypeface(null, Typeface.BOLD);
+            urlView.setGravity(Gravity.CENTER);
+            urlView.setPadding(0, dp(8), 0, dp(8));
+            urlView.setTextIsSelectable(true);
+            lanCard.addView(urlView);
+
+            TextView hint = new TextView(this);
+            hint.setText("手机与电视需连接同一个 WiFi;上传成功后电视会提示导入结果。");
+            hint.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(22));
+            hint.setTextColor(Color.parseColor("#78909C"));
+            hint.setPadding(0, dp(2), 0, 0);
+            lanCard.addView(hint);
         }
         colRight.addView(lanCard);
 
