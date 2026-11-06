@@ -29,23 +29,15 @@ public class QuizActivity extends Activity {
 
     private LockOverlayView lockView;
     private QuizOverlayView quizView;
+    private boolean pinAttempted; // 屏幕固定只尝试一次,避免系统确认框反复弹出
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
                 | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
-        MonitorService.quizShowing = true; // 与服务握手
         sRunning = this;
-        // 弹窗真正显示,本轮观看时间清零,并撤销拦截提醒
-        new Prefs(this).putInt(Prefs.KEY_WATCHED, 0);
-        try {
-            android.app.NotificationManager nm =
-                    (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-            if (nm != null) nm.cancel(2);
-        } catch (Exception ignored) {
-        }
-        tryPinScreen(); // 屏幕固定:固定期间主页/返回/最近任务全部失效
+        // 注意:此处在后台被创建时不算"已显示",握手以窗口获得焦点为准(onWindowFocusChanged)
 
         Prefs prefs = new Prefs(this);
         View content;
@@ -96,13 +88,34 @@ public class QuizActivity extends Activity {
             finish();
             return;
         }
-        MonitorService.quizShowing = true;
         // 全屏沉浸
         View decor = getWindow().getDecorView();
         decor.setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                 | View.SYSTEM_UI_FLAG_FULLSCREEN
                 | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                 | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (MonitorService.isOverlayActive()) return;
+        // 窗口真正获得焦点才算"弹题已显示"(后台创建不算),与服务握手
+        MonitorService.quizShowing = hasFocus;
+        if (hasFocus) {
+            // 真正显示:本轮观看时间清零 + 撤销拦截提醒 + 屏幕固定
+            new Prefs(this).putInt(Prefs.KEY_WATCHED, 0);
+            try {
+                android.app.NotificationManager nm =
+                        (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+                if (nm != null) nm.cancel(2);
+            } catch (Exception ignored) {
+            }
+            if (!pinAttempted) {
+                pinAttempted = true;
+                tryPinScreen(); // 屏幕固定:固定期间主页/返回/最近任务全部失效
+            }
+        }
     }
 
     @Override
@@ -171,7 +184,7 @@ public class QuizActivity extends Activity {
     protected void onDestroy() {
         if (sRunning == this) sRunning = null;
         unpinScreen(); // 答题/锁定结束即解除固定
-        MonitorService.quizShowing = false;
+        MonitorService.quizShowing = false; // 焦点丢失/销毁都视为未显示
         MonitorService svc = MonitorService.instance();
         if (svc != null) svc.onBlockingViewRemoved();
         super.onDestroy();

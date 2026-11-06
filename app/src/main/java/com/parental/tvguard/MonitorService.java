@@ -248,7 +248,7 @@ public class MonitorService extends Service {
                     displayFailCount++; // Activity 和悬浮窗都失败了
                 }
             }
-        }, 1200);
+        }, 2500);
     }
 
     /** 服务主动拉起阻断界面(答题中途退出 / 锁定中途退出)。 */
@@ -271,7 +271,7 @@ public class MonitorService extends Service {
                 Prefs p = new Prefs(MonitorService.this);
                 showOverlay(lockMode ? buildLockView(p) : buildQuizView(p), lockMode);
             }
-        }, 1200);
+        }, 2500);
     }
 
     /** 答对后由 QuizActivity 调用:恢复播放,关闭悬浮窗兜底。 */
