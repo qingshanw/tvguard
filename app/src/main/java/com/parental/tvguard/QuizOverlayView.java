@@ -51,6 +51,9 @@ public class QuizOverlayView extends android.widget.FrameLayout {
     private Runnable pendingTransition;      // 待执行的切换(下一题/通过/锁定)
     private long transitionDueAt;            // 切换应执行的时刻
     private boolean transitionQueued;        // 防止重复提交
+    private final android.os.Handler uiHandler =
+            new android.os.Handler(android.os.Looper.getMainLooper());
+    private Runnable guardedTransition;      // 本轮的守护切换(防重复执行)
 
     public QuizOverlayView(Context context, QuestionBank bank, Listener listener) {
         super(context);
@@ -241,23 +244,57 @@ public class QuizOverlayView extends android.widget.FrameLayout {
         }
     }
 
-    /** 记录待执行切换:正常由 postDelayed 执行;进程被冻结错过时由看门狗补执行。 */
-    private void scheduleTransition(Runnable r, long delayMs) {
+    /**
+     * 记录待执行切换:
+     *  - 用主线程 Handler 而非 View.postDelayed —— 视图未附着时后者永不执行(偶发卡住的根因)
+     *  - 到期后 2.5 秒再兜底触发一次,防止个别 ROM 丢消息
+     *  - 进程被冻结错过时由看门狗 recoverIfStuck 补执行
+     */
+    private void scheduleTransition(final Runnable r, long delayMs) {
         pendingTransition = r;
         transitionDueAt = android.os.SystemClock.elapsedRealtime() + delayMs;
         transitionQueued = true;
-        postDelayed(r, delayMs);
+
+        guardedTransition = new Runnable() {
+            @Override
+            public void run() {
+                if (!transitionQueued) return;
+                transitionQueued = false;
+                pendingTransition = null;
+                try {
+                    r.run();
+                } catch (Throwable ignored) {
+                }
+            }
+        };
+        uiHandler.postDelayed(guardedTransition, delayMs);
+        final Runnable backup = guardedTransition;
+        uiHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (transitionQueued) backup.run();
+            }
+        }, delayMs + 2500);
     }
 
     /** 看门狗调用:切换已逾期未执行(进程曾被冻结)则立即补执行,界面自愈。 */
     public void recoverIfStuck() {
-        if (pendingTransition != null
+        if (transitionQueued && pendingTransition != null
                 && android.os.SystemClock.elapsedRealtime() >= transitionDueAt) {
-            Runnable r = pendingTransition;
-            pendingTransition = null;
-            transitionQueued = false;
-            removeCallbacks(r);
-            r.run();
+            if (guardedTransition != null) {
+                uiHandler.removeCallbacks(guardedTransition);
+                guardedTransition.run(); // 内部会检查 transitionQueued 并执行原切换
+            } else {
+                transitionQueued = false;
+                Runnable r = pendingTransition;
+                pendingTransition = null;
+                if (r != null) {
+                    try {
+                        r.run();
+                    } catch (Throwable ignored) {
+                    }
+                }
+            }
         }
     }
 
