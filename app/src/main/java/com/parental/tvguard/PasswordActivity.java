@@ -90,7 +90,7 @@ public class PasswordActivity extends Activity {
         boxBg.setColor(Color.parseColor("#1E3257"));
         boxBg.setStroke(2, Color.parseColor("#3D5AFE"));
         inputRow.setBackground(boxBg);
-        inputRow.setPadding(dp(2), 0, dp(6), 0); // 框高由输入框自然高度决定,同旧版
+        inputRow.setPadding(dp(2), 0, dp(14), 0); // 右边距与按钮上下留隙(14)一致
 
         input = new EditText(this);
         input.setHint(mode == MODE_VERIFY ? "密码" : "新密码(4-8位数字)");

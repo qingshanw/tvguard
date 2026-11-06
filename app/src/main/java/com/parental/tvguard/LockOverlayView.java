@@ -135,7 +135,7 @@ public class LockOverlayView extends FrameLayout {
         boxBg.setColor(Color.parseColor("#5D4037"));
         boxBg.setStroke(2, Color.parseColor("#FF8A65"));
         unlockBox.setBackground(boxBg);
-        unlockBox.setPadding(dp(2), 0, dp(6), 0);
+        unlockBox.setPadding(dp(2), 0, dp(14), 0);
         unlockBox.setVisibility(GONE);
 
         unlockInput = new android.widget.EditText(getContext());
