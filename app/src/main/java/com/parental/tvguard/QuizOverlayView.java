@@ -262,6 +262,7 @@ public class QuizOverlayView extends android.widget.FrameLayout {
     }
 
     private void submit(int idx) {
+        MonitorService.onOverlayTouched();
         if (current == null || transitionQueued) return; // 防重复提交
         boolean correct = idx == current.answer;
         bank.stats().record(current.id, correct);

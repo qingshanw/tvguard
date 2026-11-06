@@ -162,6 +162,21 @@ public class MonitorService extends Service {
             return;
         }
 
+        // 压制自愈:悬浮窗添加成功但长时间无人作答(ROM 把后台应用的悬浮窗
+        // 压制为不可见,华为/荣耀等常见)→ 撤掉它,恢复计时,稍后重试并提醒授权
+        long nowE = SystemClock.elapsedRealtime();
+        if (prefs.getInt(Prefs.KEY_QUIZ_PENDING, 0) == 1 && overlayView != null
+                && !quizShowing && overlayShownAt > 0
+                && nowE - overlayShownAt > 90_000 && nowE - lastOverlayTouch > 60_000) {
+            Log.w(TAG, "悬浮窗疑似被ROM压制不可见,撤掉并恢复计时,稍后重试");
+            removeOverlay();
+            prefs.putInt(Prefs.KEY_QUIZ_PENDING, 0);
+            prefs.putInt(Prefs.KEY_WATCHED, prefs.intervalSec() / 2);
+            pendingSince = 0;
+            displayFailCount++;
+            notifyBlocked();
+        }
+
         // 卡死守卫:quizShowing=true 但界面实体全都不存在 → 状态失真,强制复位
         if (quizShowing && !QuizActivity.isAlive() && overlayView == null) {
             Log.e(TAG, "检测到 quizShowing 状态失真,强制复位");
@@ -336,6 +351,8 @@ public class MonitorService extends Service {
                 android.graphics.PixelFormat.OPAQUE);
         try {
             wm.addView(v, lp);
+            overlayShownAt = SystemClock.elapsedRealtime();
+            lastOverlayTouch = overlayShownAt;
             // 夺取输入焦点并拦截返回/菜单键,防止按键绕过答题界面
             // (主页键由系统处理无法拦截,但悬浮窗始终盖在最上层,且会被自动重新拉起)
             v.setFocusable(true);
@@ -434,9 +451,16 @@ public class MonitorService extends Service {
     private static volatile boolean overlayActive = false;
     private static volatile int displayFailCount = 0; // 弹窗连续发送失败次数(供界面提示权限问题)
     private static volatile long pendingSince = 0;    // 弹题开始等待显示的时刻(elapsedRealtime)
+    private static volatile long overlayShownAt = 0;  // 悬浮窗添加时刻(用于识别"被压制不可见")
+    private static volatile long lastOverlayTouch = 0; // 悬浮窗最近一次被点击(作答中不动它)
 
     public static int getDisplayFailCount() {
         return displayFailCount;
+    }
+
+    /** 悬浮窗答题时收到点击(证明悬浮窗可见且有人作答)。 */
+    public static void onOverlayTouched() {
+        lastOverlayTouch = SystemClock.elapsedRealtime();
     }
 
     public static boolean isServiceAliveForDiag() {

@@ -215,6 +215,12 @@ public class MainActivity extends Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         final TextView diagRef = tvDiag;
         diagRef.setText(buildDiagText());
+        diagRef.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openVendorPermissionPage();
+            }
+        });
         statusTick.postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -554,11 +560,51 @@ public class MainActivity extends Activity {
 
     private String buildDiagText() {
         boolean saw = Build.VERSION.SDK_INT >= 23 && Settings.canDrawOverlays(this);
-        return "诊断: 服务" + (MonitorService.isServiceAliveForDiag() ? "√" : "×")
+        return "诊断[" + android.os.Build.MANUFACTURER + "]: 服务"
+                + (MonitorService.isServiceAliveForDiag() ? "√" : "×")
                 + " | 悬浮窗权限" + (saw ? "√" : "×")
                 + " | Activity创建" + QuizActivity.createCount
                 + "次/获焦点" + QuizActivity.focusCount + "次"
-                + " | 弹窗失败" + MonitorService.getDisplayFailCount() + "次";
+                + " | 弹窗失败" + MonitorService.getDisplayFailCount() + "次"
+                + "\n(点此打开厂商后台权限设置)";
+    }
+
+    /** 打开各厂商的后台权限设置页(自启动/后台弹出/关联启动),失败则退回应用详情。 */
+    private void openVendorPermissionPage() {
+        String mfgr = android.os.Build.MANUFACTURER == null
+                ? "" : android.os.Build.MANUFACTURER.toLowerCase();
+        Intent it = null;
+        try {
+            if (mfgr.contains("huawei") || mfgr.contains("honor")) {
+                it = new Intent().setClassName("com.huawei.systemmanager",
+                        "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity");
+            } else if (mfgr.contains("xiaomi") || mfgr.contains("redmi")) {
+                it = new Intent().setClassName("com.miui.securitycenter",
+                        "com.miui.permcenter.autostart.AutoStartManagementActivity");
+            } else if (mfgr.contains("oppo") || mfgr.contains("realme") || mfgr.contains("oneplus")) {
+                it = new Intent().setClassName("com.coloros.safecenter",
+                        "com.coloros.safecenter.permission.startup.StartupAppListActivity");
+            } else if (mfgr.contains("vivo")) {
+                it = new Intent().setClassName("com.vivo.permissionmanager",
+                        "com.vivo.permissionmanager.activity.BgStartUpManagerActivity");
+            }
+        } catch (Exception e) {
+            it = null;
+        }
+        try {
+            if (it != null) {
+                it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(it);
+                return;
+            }
+        } catch (Exception ignored) {
+        }
+        try {
+            startActivity(new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    android.net.Uri.parse("package:" + getPackageName())));
+        } catch (Exception e) {
+            Toast.makeText(this, "请到系统设置中手动开启后台权限", Toast.LENGTH_LONG).show();
+        }
     }
 
     private void updateWatchStatus() {
