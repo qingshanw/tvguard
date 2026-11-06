@@ -510,6 +510,72 @@ public class MainActivity extends Activity {
             colRight.addView(warn);
         }
 
+        // 后台运行权限引导(无法程序检测,统一引导到厂商设置页)
+        LinearLayout bgCard = card(CARD);
+        TextView bgTitle = new TextView(this);
+        bgTitle.setText("⚙ 后台运行权限(必开)");
+        bgTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(26));
+        bgTitle.setTextColor(Color.parseColor("#FFB74D"));
+        bgCard.addView(bgTitle);
+        TextView bgDesc = new TextView(this);
+        bgDesc.setText("请把本应用的「允许自启动 / 允许关联启动 / 允许后台活动」全部打开,\n否则孩子看视频时弹题会被系统拦截");
+        bgDesc.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(22));
+        bgDesc.setTextColor(Color.parseColor("#90CAF9"));
+        bgDesc.setLineSpacing(dp(4), 1f);
+        bgDesc.setPadding(0, dp(6), 0, 0);
+        bgCard.addView(bgDesc);
+        Button bgBtn = bigButton("去设置后台权限", "#B26A00",
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        openVendorPermissionPage();
+                    }
+                });
+        LinearLayout.LayoutParams bgLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        bgLp.topMargin = dp(10);
+        bgCard.addView(bgBtn, bgLp);
+        colRight.addView(bgCard);
+
+        // 电池优化白名单(参考华为健康的后台保活做法)
+        android.os.PowerManager pm = (android.os.PowerManager)
+                getSystemService(POWER_SERVICE);
+        boolean ignoring = pm != null && pm.isIgnoringBatteryOptimizations(getPackageName());
+        if (!ignoring) {
+            LinearLayout batCard = card(CARD);
+            TextView batTitle = new TextView(this);
+            batTitle.setText("🔋 电池优化(建议关闭)");
+            batTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(26));
+            batTitle.setTextColor(Color.parseColor("#FFB74D"));
+            batCard.addView(batTitle);
+            TextView batDesc = new TextView(this);
+            batDesc.setText("关闭对本应用的电池优化,防止系统省电策略冻结后台计时");
+            batDesc.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(22));
+            batDesc.setTextColor(Color.parseColor("#90CAF9"));
+            batDesc.setPadding(0, dp(6), 0, 0);
+            batCard.addView(batDesc);
+            Button batBtn = bigButton("加入电池白名单", "#B26A00",
+                    new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            try {
+                                Intent it = new Intent(
+                                        android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                                        android.net.Uri.parse("package:" + getPackageName()));
+                                startActivity(it);
+                            } catch (Exception e) {
+                                Toast.makeText(MainActivity.this,
+                                        "请到系统设置-电池中手动允许后台运行", Toast.LENGTH_LONG).show();
+                            }
+                        }
+                    });
+            LinearLayout.LayoutParams batLp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            batLp.topMargin = dp(10);
+            batCard.addView(batBtn, batLp);
+            colRight.addView(batCard);
+        }
+
         colRight.addView(fullCard(bigButton("题库管理(查看 / 删除)", ACCENT,
                 new View.OnClickListener() {
                     @Override
@@ -605,7 +671,7 @@ public class MainActivity extends Activity {
             } else if (mfgr.contains("oppo") || mfgr.contains("realme") || mfgr.contains("oneplus")) {
                 it = new Intent().setClassName("com.coloros.safecenter",
                         "com.coloros.safecenter.permission.startup.StartupAppListActivity");
-            } else if (mfgr.contains("vivo")) {
+            } else if (mfgr.contains("vivo") || mfgr.contains("iqoo")) {
                 it = new Intent().setClassName("com.vivo.permissionmanager",
                         "com.vivo.permissionmanager.activity.BgStartUpManagerActivity");
             }

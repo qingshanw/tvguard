@@ -96,6 +96,7 @@ public class MonitorService extends Service {
         Log.i(TAG, "服务启动,题库 " + count + " 题");
 
         startForegroundCompat();
+        updateStatusNotification(new Prefs(this), 0, new Prefs(this).intervalSec());
         registerScreenReceiver();
         AlarmReceiver.schedule(this); // 看门狗:防ROM冻结后台导致的计时停摆
 
@@ -219,6 +220,7 @@ public class MonitorService extends Service {
                 delta = Math.min(delta, 300);
                 int watched = prefs.getInt(Prefs.KEY_WATCHED, 0) + delta;
                 prefs.putInt(Prefs.KEY_WATCHED, watched); // apply() 异步落盘,重启后接续
+                updateStatusNotification(prefs, watched, prefs.intervalSec());
 
                 // 强制休息:每连续观看 N 秒,锁定 M 秒(独立于答题)
                 int forceN = prefs.forceIntervalSec();
@@ -592,6 +594,57 @@ public class MonitorService extends Service {
     public void setScreenOn(boolean on) {
         screenOn = on;
         lastTickRealtime = SystemClock.elapsedRealtime();
+    }
+
+    private static final String STATUS_CHANNEL = "guard_status";
+    private long lastNotifAt = 0;
+
+    /** 更新常驻通知条幅:实时显示本轮观看时间(参考华为健康的后台常驻做法)。 */
+    private void updateStatusNotification(Prefs prefs, int watched, int intervalSec) {
+        long now = SystemClock.elapsedRealtime();
+        if (now - lastNotifAt < 5000) return; // 5秒刷新一次即可
+        lastNotifAt = now;
+        try {
+            NotificationManager nm =
+                    (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm == null) return;
+            if (Build.VERSION.SDK_INT >= 26) {
+                NotificationChannel ch = new NotificationChannel(STATUS_CHANNEL,
+                        "守护状态", NotificationManager.IMPORTANCE_LOW);
+                ch.setShowBadge(false);
+                nm.createNotificationChannel(ch);
+            }
+            long lockUntil = prefs.getLong(Prefs.KEY_LOCK_UNTIL, 0);
+            String title;
+            String text;
+            if (lockUntil > System.currentTimeMillis()) {
+                long remain = (lockUntil - System.currentTimeMillis()) / 1000;
+                title = "视界守卫者 · 休息锁定中";
+                text = "剩余 " + remain / 60 + " 分 " + remain % 60 + " 秒";
+            } else {
+                title = "视界守卫者 · 已观看 " + watched / 60 + "分" + String.format("%02d", watched % 60) + "秒";
+                int remainSec = Math.max(0, intervalSec - watched);
+                text = "距离下次答题还有 " + remainSec / 60 + " 分 " + remainSec % 60 + " 秒";
+            }
+            Intent it = new Intent(this, MainActivity.class)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            android.app.PendingIntent pi = android.app.PendingIntent.getActivity(
+                    this, 3003, it,
+                    android.app.PendingIntent.FLAG_UPDATE_CURRENT
+                            | android.app.PendingIntent.FLAG_IMMUTABLE);
+            Notification.Builder b = Build.VERSION.SDK_INT >= 26
+                    ? new Notification.Builder(this, STATUS_CHANNEL)
+                    : new Notification.Builder(this).setPriority(Notification.PRIORITY_LOW);
+            b.setContentTitle(title)
+                    .setContentText(text)
+                    .setSmallIcon(android.R.drawable.ic_lock_idle_lock)
+                    .setOngoing(true)
+                    .setOnlyAlertOnce(true)
+                    .setContentIntent(pi);
+            nm.notify(1, b.build());
+        } catch (Exception e) {
+            Log.e(TAG, "update notification failed", e);
+        }
     }
 
     private void startForegroundCompat() {
