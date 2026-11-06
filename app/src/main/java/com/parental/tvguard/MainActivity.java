@@ -892,11 +892,10 @@ public class MainActivity extends Activity {
         val.setTextColor(Color.parseColor("#FFD54F"));
         val.setGravity(Gravity.CENTER);
         val.setMinWidth(dp(130));
-        // 明显的输入框样式:琥珀描边 + 深底 + 圆角,提示可点击直接输入
+        // 可点击输入的数值框:比卡片浅一档的底色 + 圆角,无描边
         GradientDrawable valBg = new GradientDrawable();
         valBg.setCornerRadius(dp(10));
-        valBg.setColor(Color.parseColor("#1B2C4C"));
-        valBg.setStroke(dp(2), Color.parseColor("#FFD54F"));
+        valBg.setColor(Color.parseColor("#2E4370"));
         val.setBackground(valBg);
         val.setPadding(dp(8), 0, dp(8), 0);
         val.setFocusable(true);
@@ -907,13 +906,16 @@ public class MainActivity extends Activity {
                 showStepperInput(name, spec);
             }
         });
-        box.addView(val, new LinearLayout.LayoutParams(dp(150), dp(64)));
+        LinearLayout.LayoutParams vp = new LinearLayout.LayoutParams(dp(150), dp(64));
+        vp.rightMargin = dp(14); // 与加减按钮拉开距离
+        box.addView(val, vp);
 
-        box.addView(stepButton("－", -spec.step(), spec, val),
-                new LinearLayout.LayoutParams(dp(72), dp(64)));
+        LinearLayout.LayoutParams mp = new LinearLayout.LayoutParams(dp(72), dp(64));
+        mp.leftMargin = dp(14);
+        box.addView(stepButton("－", -spec.step(), spec, val), mp);
 
         LinearLayout.LayoutParams pp = new LinearLayout.LayoutParams(dp(72), dp(64));
-        pp.leftMargin = dp(10);
+        pp.leftMargin = dp(16); // ＋- 之间留间隔,避免误触
         box.addView(stepButton("＋", spec.step(), spec, val), pp);
         return box;
     }
