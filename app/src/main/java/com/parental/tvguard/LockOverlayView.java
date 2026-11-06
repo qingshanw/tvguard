@@ -135,8 +135,7 @@ public class LockOverlayView extends FrameLayout {
         boxBg.setColor(Color.parseColor("#5D4037"));
         boxBg.setStroke(2, Color.parseColor("#FF8A65"));
         unlockBox.setBackground(boxBg);
-        int inPad = dp(12);
-        unlockBox.setPadding(inPad, dp(6), dp(6), dp(6));
+        unlockBox.setPadding(dp(2), 0, dp(6), 0);
         unlockBox.setVisibility(GONE);
 
         unlockInput = new android.widget.EditText(getContext());
@@ -149,7 +148,9 @@ public class LockOverlayView extends FrameLayout {
         unlockInput.setHintTextColor(Color.parseColor("#8D6E63"));
         unlockInput.setGravity(Gravity.CENTER_VERTICAL);
         unlockInput.setBackground(null);
-        unlockInput.setPadding(dp(8), 0, dp(8), 0);
+        // 与密码页一致:文字尺寸+按屏幕密度的竖向内边距,框高即自然高度
+        int vp = (int) (12 * getContext().getResources().getDisplayMetrics().density + 0.5f);
+        unlockInput.setPadding(dp(8), vp, dp(8), vp);
         unlockInput.setSingleLine(true);
         unlockBox.addView(unlockInput, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
@@ -187,8 +188,9 @@ public class LockOverlayView extends FrameLayout {
         // 显式固定高度,彻底不受 Button 主题 minHeight 影响
         unlockBox.addView(ok, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, dp(44)));
-        // 输入框整体定高(与旧版等高),比例与密码页一致
-        box.addView(unlockBox, new LinearLayout.LayoutParams(dp(680), dp(88)));
+        // 框高=输入框自然高度(与密码页一致)
+        box.addView(unlockBox, new LinearLayout.LayoutParams(dp(680),
+                ViewGroup.LayoutParams.WRAP_CONTENT));
 
         unlockError = new TextView(getContext());
         unlockError.setTextColor(Color.parseColor("#E57373"));

@@ -90,19 +90,15 @@ public class PasswordActivity extends Activity {
         boxBg.setColor(Color.parseColor("#1E3257"));
         boxBg.setStroke(2, Color.parseColor("#3D5AFE"));
         inputRow.setBackground(boxBg);
-        int inPad = dp(12);
-        inputRow.setPadding(inPad, dp(6), dp(6), dp(6));
+        inputRow.setPadding(dp(2), 0, dp(6), 0); // 框高由输入框自然高度决定,同旧版
 
         input = new EditText(this);
         input.setHint(mode == MODE_VERIFY ? "密码" : "新密码(4-8位数字)");
         input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER
                 | android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD);
-        input.setTextSize(TypedValue.COMPLEX_UNIT_PX, UiUtil.px(this, UiUtil.TEXT_OPTION));
-        input.setTextColor(Color.WHITE);
-        input.setHintTextColor(Color.parseColor("#607D8B"));
-        input.setGravity(Gravity.CENTER_VERTICAL);
-        input.setBackground(null);
-        input.setPadding(dp(8), 0, dp(8), 0);
+        // styleInput 与旧版完全一致(文字尺寸+按屏幕密度的内边距),高度自然等同旧版
+        styleInput(input);
+        input.setBackground(null); // 背景移到外层容器,本体透明
         inputRow.addView(input, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
 
@@ -132,11 +128,8 @@ public class PasswordActivity extends Activity {
         // 显式固定高度,彻底不受 Button 主题 minHeight 影响
         inputRow.addView(ok, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, dp(44)));
-        // 输入框整体定高(与旧版等高),按钮为其一半,嵌在框内右端
-        LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(88));
-        rowLp.topMargin = dp(12);
-        root.addView(inputRow, rowLp);
+        // 框高=输入框自然高度(与旧版一致,WRAP_CONTENT)
+        root.addView(inputRow, matchWrap(dp(0), dp(12)));
 
         tvError = new TextView(this);
         tvError.setTextColor(Color.parseColor("#E57373"));
