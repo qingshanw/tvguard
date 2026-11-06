@@ -162,6 +162,12 @@ public class MonitorService extends Service {
             return;
         }
 
+        // 卡死守卫:quizShowing=true 但界面实体全都不存在 → 状态失真,强制复位
+        if (quizShowing && !QuizActivity.isAlive() && overlayView == null) {
+            Log.e(TAG, "检测到 quizShowing 状态失真,强制复位");
+            quizShowing = false;
+        }
+
         // 答题未完成却被退出(按Home/强杀)→ 立即重新拉起,不给继续看
         // (家长正在配置界面时暂缓,避免弹窗打断家长操作;离开配置后自动恢复拉起)
         if (screenOn && configUiCount.get() == 0
@@ -225,28 +231,26 @@ public class MonitorService extends Service {
         pendingSince = SystemClock.elapsedRealtime();
         new Prefs(this).putInt(Prefs.KEY_QUIZ_PENDING, 1);
         quizShowing = false;
+        final Prefs p = new Prefs(this);
         try {
             Intent it = new Intent(this, QuizActivity.class);
             it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
             startActivity(it);
         } catch (Exception e) {
             Log.e(TAG, "启动答题失败,直接悬浮窗", e);
-            quizShowing = true;
-            Prefs p = new Prefs(MonitorService.this);
             showOverlay(buildQuizView(p), false);
             return;
         }
-        // 握手检查:1.2 秒后若界面未起来,用悬浮窗兜底
+        // 握手检查:2.5 秒后若界面未获得焦点,用悬浮窗兜底
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 if (quizShowing) return;
                 Log.w(TAG, "答题界面未到前台,悬浮窗兜底");
-                quizShowing = true;
-                Prefs p = new Prefs(MonitorService.this);
                 showOverlay(buildQuizView(p), false);
                 if (overlayView == null) {
                     displayFailCount++; // Activity 和悬浮窗都失败了
+                    Log.e(TAG, "悬浮窗也添加失败,保持重试(不再假装已显示)");
                 }
             }
         }, 2500);
@@ -260,7 +264,6 @@ public class MonitorService extends Service {
             it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
             startActivity(it);
         } catch (Exception e) {
-            quizShowing = true;
             showOverlay(lockMode ? buildLockView(prefs) : buildQuizView(prefs), lockMode);
             return;
         }
@@ -268,9 +271,7 @@ public class MonitorService extends Service {
             @Override
             public void run() {
                 if (quizShowing) return;
-                quizShowing = true;
-                Prefs p = new Prefs(MonitorService.this);
-                showOverlay(lockMode ? buildLockView(p) : buildQuizView(p), lockMode);
+                showOverlay(lockMode ? buildLockView(prefs) : buildQuizView(prefs), lockMode);
             }
         }, 2500);
     }
@@ -436,6 +437,10 @@ public class MonitorService extends Service {
 
     public static int getDisplayFailCount() {
         return displayFailCount;
+    }
+
+    public static boolean isServiceAliveForDiag() {
+        return sInstance != null;
     }
 
     /** 由 QuizActivity 销毁时回调:清除握手标记,tick 会按需重新拉起。 */

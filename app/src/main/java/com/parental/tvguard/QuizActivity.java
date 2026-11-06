@@ -26,6 +26,8 @@ import android.view.WindowManager;
 public class QuizActivity extends Activity {
 
     private static QuizActivity sRunning; // 当前存活的实例(悬浮窗接管时由服务关闭)
+    public static volatile int createCount = 0;  // 诊断:Activity 创建次数
+    public static volatile int focusCount = 0;   // 诊断:窗口真正获得焦点次数
 
     private LockOverlayView lockView;
     private QuizOverlayView quizView;
@@ -37,6 +39,7 @@ public class QuizActivity extends Activity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
                 | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
         sRunning = this;
+        createCount++;
         // 注意:此处在后台被创建时不算"已显示",握手以窗口获得焦点为准(onWindowFocusChanged)
 
         Prefs prefs = new Prefs(this);
@@ -100,6 +103,7 @@ public class QuizActivity extends Activity {
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (MonitorService.isOverlayActive()) return;
+        if (hasFocus) focusCount++;
         // 窗口真正获得焦点才算"弹题已显示"(后台创建不算),与服务握手
         MonitorService.quizShowing = hasFocus;
         if (hasFocus) {
@@ -160,6 +164,11 @@ public class QuizActivity extends Activity {
         } catch (Throwable e) {
             // ignore
         }
+    }
+
+    /** 诊断:Activity 是否有存活实例。 */
+    public static boolean isAlive() {
+        return sRunning != null;
     }
 
     /** 看门狗调用:冻结后补执行逾期的答题切换。 */

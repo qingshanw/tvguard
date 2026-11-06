@@ -206,6 +206,23 @@ public class MainActivity extends Activity {
         root.addView(tvWatchStatus, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
+        // 诊断行:弹窗通道状态,排查"待显示"问题一眼可见
+        TextView tvDiag = new TextView(this);
+        tvDiag.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(20));
+        tvDiag.setTextColor(Color.parseColor("#607D8B"));
+        tvDiag.setGravity(Gravity.CENTER);
+        root.addView(tvDiag, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        final TextView diagRef = tvDiag;
+        diagRef.setText(buildDiagText());
+        statusTick.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                diagRef.setText(buildDiagText());
+                statusTick.postDelayed(this, 1000);
+            }
+        }, 1000);
+
         LinearLayout columns = new LinearLayout(this);
         columns.setOrientation(LinearLayout.HORIZONTAL);
         columns.setGravity(Gravity.CENTER);
@@ -533,6 +550,15 @@ public class MainActivity extends Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         verLp.topMargin = dp(10);
         colRight.addView(ver, verLp);
+    }
+
+    private String buildDiagText() {
+        boolean saw = Build.VERSION.SDK_INT >= 23 && Settings.canDrawOverlays(this);
+        return "诊断: 服务" + (MonitorService.isServiceAliveForDiag() ? "√" : "×")
+                + " | 悬浮窗权限" + (saw ? "√" : "×")
+                + " | Activity创建" + QuizActivity.createCount
+                + "次/获焦点" + QuizActivity.focusCount + "次"
+                + " | 弹窗失败" + MonitorService.getDisplayFailCount() + "次";
     }
 
     private void updateWatchStatus() {

@@ -10,8 +10,8 @@ android {
         applicationId "com.parental.tvguard"
         minSdk 21          // Android 5.0,兼容绝大多数电视盒子
         targetSdk 33       // 避开 Android 14 前台服务类型强制要求,侧载安装无商店限制
-        versionCode 33
-        versionName "1.32"
+        versionCode 34
+        versionName "1.33"
     }
 
     signingConfigs {
