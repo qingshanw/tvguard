@@ -157,11 +157,14 @@ public class LockOverlayView extends FrameLayout {
         android.widget.Button ok = new android.widget.Button(getContext(),
                 null, android.R.attr.borderlessButtonStyle);
         ok.setText("解锁");
-        ok.setTextSize(TypedValue.COMPLEX_UNIT_PX, UiUtil.px(getContext(), UiUtil.TEXT_OPTION));
+        ok.setTextSize(TypedValue.COMPLEX_UNIT_PX, UiUtil.px(getContext(), UiUtil.TEXT_LABEL));
         ok.setTextColor(Color.WHITE);
         ok.setAllCaps(false);
         ok.setIncludeFontPadding(false);
-        ok.setPadding(dp(24), dp(10), dp(24), dp(10));
+        // 压掉 Button 主题自带的 minHeight/minWidth(88dip)
+        ok.setMinimumHeight(0);
+        ok.setMinimumWidth(0);
+        ok.setPadding(dp(14), dp(3), dp(14), dp(3));
         android.graphics.drawable.GradientDrawable okBg =
                 new android.graphics.drawable.GradientDrawable();
         okBg.setCornerRadius(dp(8));

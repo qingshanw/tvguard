@@ -113,8 +113,10 @@ public class PasswordActivity extends Activity {
         ok.setTextColor(Color.WHITE);
         ok.setAllCaps(false);
         ok.setIncludeFontPadding(false);
-        ok.setPadding(dp(16), dp(6), dp(16), dp(6));
-        ok.setMinimumHeight(dp(40));
+        // 压掉 Button 主题自带的 minHeight/minWidth(88dip),否则会和输入框一样高
+        ok.setMinimumHeight(0);
+        ok.setMinimumWidth(0);
+        ok.setPadding(dp(14), dp(3), dp(14), dp(3));
         android.graphics.drawable.GradientDrawable okBg =
                 new android.graphics.drawable.GradientDrawable();
         okBg.setCornerRadius(dp(8));
