@@ -984,7 +984,7 @@ public class MainActivity extends Activity {
     private void showStepperInput(final String name, final StepperSpec spec) {
         final android.widget.EditText input = new android.widget.EditText(this);
         int cur = spec.get();
-        boolean byMinute = spec.timeUnit() && spec.format(cur).contains("分钟");
+        boolean byMinute = spec.timeUnit() && (spec.format(cur).contains("分钟") || cur == 0);
         input.setText(String.valueOf(byMinute ? cur / 60 : cur));
         input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
         input.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(30));
@@ -1007,7 +1007,7 @@ public class MainActivity extends Activity {
                 .setPositiveButton("确定", new android.content.DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(android.content.DialogInterface d, int which) {
-                        int v = parseStepperInput(input.getText().toString(), spec);
+                        int v = parseStepperInput(input.getText().toString(), spec, byMinute);
                         if (v < 0) {
                             Toast.makeText(MainActivity.this, "输入无效", Toast.LENGTH_SHORT).show();
                             return;
@@ -1020,8 +1020,11 @@ public class MainActivity extends Activity {
                 .show();
     }
 
-    /** 解析输入:时间行支持 "20"/"15分"/"90秒"(含 m/s 后缀),数字按秒返回;无效返回 -1。 */
-    private static int parseStepperInput(String s, StepperSpec spec) {
+    /**
+     * 解析输入:时间行支持 "20"/"15分"/"90秒"(含 m/s 后缀)。
+     * 无后缀的数字按当前显示单位(分钟时×60);显式带"秒/s"后缀才按秒。无效返回 -1。
+     */
+    private static int parseStepperInput(String s, StepperSpec spec, boolean byMinute) {
         if (s == null) return -1;
         s = s.trim().toLowerCase().replace("分钟", "分");
         long mult = 1;
@@ -1030,7 +1033,10 @@ public class MainActivity extends Activity {
                 mult = 60;
                 s = s.replaceAll("分|m$", "");
             } else if (s.endsWith("秒") || s.endsWith("s")) {
+                mult = 1;
                 s = s.replaceAll("秒|s$", "");
+            } else {
+                mult = byMinute ? 60 : 1;
             }
         }
         try {
