@@ -109,12 +109,12 @@ public class PasswordActivity extends Activity {
         android.widget.Button ok = new android.widget.Button(this,
                 null, android.R.attr.borderlessButtonStyle);
         ok.setText("确认");
-        ok.setTextSize(TypedValue.COMPLEX_UNIT_PX, UiUtil.px(this, UiUtil.TEXT_OPTION));
+        ok.setTextSize(TypedValue.COMPLEX_UNIT_PX, UiUtil.px(this, UiUtil.TEXT_LABEL));
         ok.setTextColor(Color.WHITE);
         ok.setAllCaps(false);
         ok.setIncludeFontPadding(false);
-        ok.setPadding(dp(24), dp(10), dp(24), dp(10));
-        ok.setMinimumHeight(dp(52));
+        ok.setPadding(dp(16), dp(6), dp(16), dp(6));
+        ok.setMinimumHeight(dp(40));
         android.graphics.drawable.GradientDrawable okBg =
                 new android.graphics.drawable.GradientDrawable();
         okBg.setCornerRadius(dp(8));
