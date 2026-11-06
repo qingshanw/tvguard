@@ -25,8 +25,8 @@
 
 | | | |
 |:---:|:---:|:---:|
-| **语文题**<br><img src="capture/quiz-chinese.jpg" width="260"/> | **数学题**<br><img src="capture/quiz-math.jpg" width="260"/> | **英语题**<br><img src="capture/quiz-en.jpg" width="260"/> |
-| | **答错锁定 · 倒计时休息**<br><img src="capture/lock-rest.jpg" width="260"/> | |
+| **语文题**<br><img src="capture/quiz-chinese.jpg" width="320"/> | **数学题**<br><img src="capture/quiz-math.jpg" width="320"/> | **英语题**<br><img src="capture/quiz-en.jpg" width="320"/> |
+| | **答错锁定 · 倒计时休息**<br><img src="capture/lock-rest-land.jpg" width="320"/> | |
 
 ## 权限配置(重要,手机安装必看)
 
