@@ -184,8 +184,9 @@ public class LockOverlayView extends FrameLayout {
                 return true;
             }
         });
+        // 显式固定高度,彻底不受 Button 主题 minHeight 影响
         unlockBox.addView(ok, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                ViewGroup.LayoutParams.WRAP_CONTENT, dp(44)));
         box.addView(unlockBox, new LinearLayout.LayoutParams(dp(680),
                 ViewGroup.LayoutParams.WRAP_CONTENT));
 

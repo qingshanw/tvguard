@@ -116,7 +116,7 @@ public class PasswordActivity extends Activity {
         // 压掉 Button 主题自带的 minHeight/minWidth(88dip),否则会和输入框一样高
         ok.setMinimumHeight(0);
         ok.setMinimumWidth(0);
-        ok.setPadding(dp(14), dp(3), dp(14), dp(3));
+        ok.setPadding(dp(14), 0, dp(14), 0);
         android.graphics.drawable.GradientDrawable okBg =
                 new android.graphics.drawable.GradientDrawable();
         okBg.setCornerRadius(dp(8));
@@ -129,8 +129,9 @@ public class PasswordActivity extends Activity {
                 submit();
             }
         });
+        // 显式固定高度,彻底不受 Button 主题 minHeight 影响
         inputRow.addView(ok, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                ViewGroup.LayoutParams.WRAP_CONTENT, dp(44)));
         root.addView(inputRow, matchWrap(dp(0), dp(12)));
 
         tvError = new TextView(this);
