@@ -187,7 +187,7 @@ public class LockOverlayView extends FrameLayout {
         });
         // 按原始截图实测比例:框高px(148),解锁键约为其2/3(px(96))
         unlockBox.addView(ok, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, UiUtil.px(getContext(), 96)));
+                ViewGroup.LayoutParams.WRAP_CONTENT, UiUtil.px(getContext(), 120)));
         // 框高与密码页一致
         box.addView(unlockBox, new LinearLayout.LayoutParams(dp(680),
                 UiUtil.px(getContext(), 148)));

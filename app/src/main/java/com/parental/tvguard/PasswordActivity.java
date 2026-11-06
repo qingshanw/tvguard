@@ -127,7 +127,7 @@ public class PasswordActivity extends Activity {
         });
         // 按原始截图实测比例:框高px(148),确认键约为其2/3(px(96)),矮一截嵌在框内
         inputRow.addView(ok, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, UiUtil.px(this, 96)));
+                ViewGroup.LayoutParams.WRAP_CONTENT, UiUtil.px(this, 120)));
         LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, UiUtil.px(this, 148));
         rowLp.topMargin = dp(12);
