@@ -206,8 +206,10 @@ public class MonitorService extends Service {
             return;
         }
 
-        // 正常亮屏、无阻断界面、且家长不在配置界面时才计时
-        if (screenOn && configUiCount.get() == 0 && !quizShowing && overlayView == null) {
+        // 正常亮屏、无阻断界面、无待显示弹窗、且家长不在配置界面时才计时
+        // (pending==1 期间严禁重复触发弹题——那是"刷新两次"的根源)
+        if (screenOn && configUiCount.get() == 0 && !quizShowing && overlayView == null
+                && prefs.getInt(Prefs.KEY_QUIZ_PENDING, 0) == 0) {
             long t = SystemClock.elapsedRealtime();
             int delta = (int) ((t - lastTickRealtime) / 1000);
             lastTickRealtime = t;

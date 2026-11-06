@@ -206,14 +206,26 @@ public class MainActivity extends Activity {
         root.addView(tvWatchStatus, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        // 诊断行:弹窗通道状态,排查"待显示"问题一眼可见
+        // 诊断开关(默认折叠,点击展开)——不喧宾夺主
+        TextView diagToggle = new TextView(this);
+        diagToggle.setText("▸ 诊断");
+        diagToggle.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(20));
+        diagToggle.setTextColor(Color.parseColor("#607D8B"));
+        diagToggle.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
+        diagToggle.setPadding(0, dp(2), dp(8), dp(2));
+        root.addView(diagToggle, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        // 诊断详情(展开后可见):弹窗通道状态,排查"待显示"问题
         TextView tvDiag = new TextView(this);
         tvDiag.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(20));
         tvDiag.setTextColor(Color.parseColor("#607D8B"));
         tvDiag.setGravity(Gravity.CENTER);
+        tvDiag.setVisibility(View.GONE); // 默认折叠
         root.addView(tvDiag, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         final TextView diagRef = tvDiag;
+        final TextView toggleRef = diagToggle;
         diagRef.setText(buildDiagText());
         diagRef.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -221,10 +233,19 @@ public class MainActivity extends Activity {
                 openVendorPermissionPage();
             }
         });
+        diagToggle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                boolean show = diagRef.getVisibility() != View.VISIBLE;
+                diagRef.setVisibility(show ? View.VISIBLE : View.GONE);
+                toggleRef.setText(show ? "▾ 诊断" : "▸ 诊断");
+                if (show) diagRef.setText(buildDiagText());
+            }
+        });
         statusTick.postDelayed(new Runnable() {
             @Override
             public void run() {
-                diagRef.setText(buildDiagText());
+                if (diagRef.getVisibility() == View.VISIBLE) diagRef.setText(buildDiagText());
                 statusTick.postDelayed(this, 1000);
             }
         }, 1000);
