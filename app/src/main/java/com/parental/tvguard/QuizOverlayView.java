@@ -178,7 +178,6 @@ public class QuizOverlayView extends android.widget.FrameLayout {
     /** 所有题目已毕业:显示家长密码解锁界面。 */
     private void showGraduated() {
         if (bank.allGraduated) {
-            SoundUtil.cheer(getContext());
             tvTitle.setText("🎉 全部题目都答完啦!");
             tvQuestion.setText("所有题目都已被你成功答对 5 次,暂时没有新题目了。\n请家长输入密码重置题目后才能继续观看。");
         } else {

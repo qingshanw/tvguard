@@ -19,11 +19,11 @@ import android.os.Build;
 
 /**
  * 答题提示音(SoundPool 播放内置音频资源):
- *  - 答对:上扬清脆的确认音(confirmation)
- *  - 答错:低沉下滑的错误音(error)
- *  - 全部毕业:明亮的庆祝音
+ *  - 答对:上扬的钢鼓铃声(约1.4秒,300→470Hz 上行旋律)
+ *  - 答错:下行的低沉钢鼓铃声(约1.4秒,420→263Hz 下行旋律)
  *
- * 音效来源:Kenney "Interface Sounds" 音效包(kenney.nl),
+ * 音效来源:Kenney "Music Jingles" 音效包(kenney.nl),截取
+ * jingles_steel_2 / jingles_steel_1,
  * 以 CC0 1.0 通用(CC0 1.0 Universal)许可发布,可自由使用、修改与再分发。
  */
 public final class SoundUtil {
@@ -31,25 +31,19 @@ public final class SoundUtil {
     private static SoundPool sPool;
     private static int sIdCorrect;
     private static int sIdWrong;
-    private static int sIdCheer;
     private static boolean sLoaded;
 
     private SoundUtil() {
     }
 
-    /** 答对:上扬清脆的确认音。 */
+    /** 答对:上扬的欢快铃声。 */
     public static void correct(Context c) {
         play(c, sIdCorrect);
     }
 
-    /** 答错:低沉下滑的错误音。 */
+    /** 答错:下行的低沉铃声。 */
     public static void wrong(Context c) {
         play(c, sIdWrong);
-    }
-
-    /** 全部毕业:明亮的庆祝音。 */
-    public static void cheer(Context c) {
-        play(c, sIdCheer);
     }
 
     private static synchronized void ensureLoaded(Context c) {
@@ -77,7 +71,6 @@ public final class SoundUtil {
             });
             sIdCorrect = sPool.load(c.getApplicationContext(), R.raw.sound_correct, 1);
             sIdWrong = sPool.load(c.getApplicationContext(), R.raw.sound_wrong, 1);
-            sIdCheer = sPool.load(c.getApplicationContext(), R.raw.sound_cheer, 1);
         } catch (Throwable t) {
             // 音频初始化失败时静默,不影响答题流程
             sPool = null;
