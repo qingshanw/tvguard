@@ -609,7 +609,8 @@ public class MainActivity extends Activity {
 
     private String buildDiagText() {
         boolean saw = Build.VERSION.SDK_INT >= 23 && Settings.canDrawOverlays(this);
-        return "诊断[" + android.os.Build.MANUFACTURER + "]: 服务"
+        return "诊断[" + android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL
+                + " / Android " + android.os.Build.VERSION.RELEASE + "]: 服务"
                 + (MonitorService.isServiceAliveForDiag() ? "√" : "×")
                 + " | 悬浮窗权限" + (saw ? "√" : "×")
                 + " | Activity创建" + QuizActivity.createCount
