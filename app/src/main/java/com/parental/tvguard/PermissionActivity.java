@@ -164,7 +164,11 @@ public class PermissionActivity extends Activity {
         // 4. 通知(可自动检测,常驻观看时间条幅需要)
         android.app.NotificationManager nm =
                 (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        boolean notifOk = Build.VERSION.SDK_INT < 24 || nm == null || nm.areNotificationsEnabled();
+        boolean runtimeOk = Build.VERSION.SDK_INT < 33
+                || checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+                == android.content.pm.PackageManager.PERMISSION_GRANTED;
+        boolean notifOk = runtimeOk && (Build.VERSION.SDK_INT < 24 || nm == null
+                || nm.areNotificationsEnabled());
         listBox.addView(permRow(
                 "通知权限",
                 "下拉通知栏的常驻条幅(实时观看时间)与弹窗拦截提醒需要通知权限。",
@@ -173,6 +177,14 @@ public class PermissionActivity extends Activity {
                 notifOk ? null : new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
+                        // Android 13+: 必须先申请运行时权限,否则系统页开关是灰色的
+                        if (Build.VERSION.SDK_INT >= 33
+                                && checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+                                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                            requestPermissions(new String[]{
+                                    android.Manifest.permission.POST_NOTIFICATIONS}, 100);
+                            return;
+                        }
                         try {
                             Intent it = new Intent(
                                     Settings.ACTION_APP_NOTIFICATION_SETTINGS)

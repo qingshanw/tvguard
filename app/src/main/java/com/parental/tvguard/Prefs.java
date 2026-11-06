@@ -34,6 +34,7 @@ public final class Prefs {
     public static final String KEY_BOOT_START = "boot_start";       // 开机自启
     public static final String KEY_EMBED_GRADE4 = "embed_grade4";   // 内嵌四年级题库启用(默认开)
     public static final String KEY_BG_CONFIRMED = "bg_confirmed";   // 后台运行权限已手动确认
+    public static final String KEY_NOTIF_ASKED = "notif_asked";     // 通知权限是否已请求过
 
     // 运行状态(重启后接续)
     public static final String KEY_WATCHED = "watched_sec";         // 本轮已观看秒数

@@ -95,10 +95,25 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** Android 13+ 需要运行时请求通知权限,否则系统通知开关是灰色的无法打开。 */
+    private void askNotificationPermission() {
+        if (Build.VERSION.SDK_INT < 33) return;
+        try {
+            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+                    == android.content.pm.PackageManager.PERMISSION_GRANTED) return;
+            if (prefs.getBool(Prefs.KEY_NOTIF_ASKED, false)) return;
+            prefs.putBool(Prefs.KEY_NOTIF_ASKED, true);
+            requestPermissions(new String[]{
+                    android.Manifest.permission.POST_NOTIFICATIONS}, 100);
+        } catch (Exception ignored) {
+        }
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
         MonitorService.enterConfigUi(); // 家长在配置,暂停计时
+        askNotificationPermission();
         statusTicker.run(); // 状态栏立即刷新并每秒更新
         if (!unlocked && !askingPassword) {
             // 每次进入/回到本页都必须先通过家长密码
