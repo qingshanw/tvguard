@@ -130,23 +130,24 @@ public class QuizActivity extends Activity {
         if (svc != null) svc.onQuizHidden();
     }
 
-    /** 屏幕固定(Lock Task):设备所有者模式下静默生效;普通模式首次弹系统确认框。 */
+    /**
+     * 屏幕固定(Lock Task):仅在设备所有者模式下静默启用。
+     * 普通模式不再调用 startLockTask——它会弹系统确认框抢焦点,
+     * 导致答题界面被判"未显示"、悬浮窗兜底接管,出现"弹两次"的闪烁。
+     */
     private void tryPinScreen() {
         try {
             android.app.admin.DevicePolicyManager dpm = (android.app.admin.DevicePolicyManager)
                     getSystemService(DEVICE_POLICY_SERVICE);
+            if (dpm == null || !dpm.isDeviceOwnerApp(getPackageName())) {
+                return; // 非设备所有者:不做屏幕固定,防逃靠服务秒级拉回
+            }
             android.content.ComponentName admin =
                     new android.content.ComponentName(this, GuardDeviceAdminReceiver.class);
-            if (dpm != null && dpm.isDeviceOwnerApp(getPackageName())) {
-                // 设备所有者:注册锁定任务白名单并静默固定,HOME 完全失效
-                dpm.setLockTaskPackages(admin, new String[]{getPackageName()});
-                startLockTask();
-            } else {
-                // 普通应用:请求屏幕固定,系统弹一次确认框,确认后 HOME 失效
-                startLockTask();
-            }
+            dpm.setLockTaskPackages(admin, new String[]{getPackageName()});
+            startLockTask(); // 静默固定,无系统确认框
         } catch (Throwable e) {
-            // 设备不支持或用户拒绝固定,仍由服务快速拉回兜底
+            // 设备不支持时忽略
         }
     }
 
