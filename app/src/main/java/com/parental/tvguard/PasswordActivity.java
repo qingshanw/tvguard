@@ -105,7 +105,7 @@ public class PasswordActivity extends Activity {
         android.widget.Button ok = new android.widget.Button(this,
                 null, android.R.attr.borderlessButtonStyle);
         ok.setText("确认");
-        ok.setTextSize(TypedValue.COMPLEX_UNIT_PX, UiUtil.px(this, UiUtil.TEXT_LABEL));
+        ok.setTextSize(TypedValue.COMPLEX_UNIT_PX, UiUtil.px(this, UiUtil.TEXT_OPTION));
         ok.setTextColor(Color.WHITE);
         ok.setAllCaps(false);
         ok.setIncludeFontPadding(false);
@@ -125,11 +125,13 @@ public class PasswordActivity extends Activity {
                 submit();
             }
         });
-        // 显式固定高度,彻底不受 Button 主题 minHeight 影响
+        // 按原始截图实测比例:框高px(148),确认键约为其2/3(px(96)),矮一截嵌在框内
         inputRow.addView(ok, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, dp(44)));
-        // 框高=输入框自然高度(与旧版一致,WRAP_CONTENT)
-        root.addView(inputRow, matchWrap(dp(0), dp(12)));
+                ViewGroup.LayoutParams.WRAP_CONTENT, UiUtil.px(this, 96)));
+        LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, UiUtil.px(this, 148));
+        rowLp.topMargin = dp(12);
+        root.addView(inputRow, rowLp);
 
         tvError = new TextView(this);
         tvError.setTextColor(Color.parseColor("#E57373"));

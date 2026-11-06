@@ -158,14 +158,14 @@ public class LockOverlayView extends FrameLayout {
         android.widget.Button ok = new android.widget.Button(getContext(),
                 null, android.R.attr.borderlessButtonStyle);
         ok.setText("解锁");
-        ok.setTextSize(TypedValue.COMPLEX_UNIT_PX, UiUtil.px(getContext(), UiUtil.TEXT_LABEL));
+        ok.setTextSize(TypedValue.COMPLEX_UNIT_PX, UiUtil.px(getContext(), UiUtil.TEXT_OPTION));
         ok.setTextColor(Color.WHITE);
         ok.setAllCaps(false);
         ok.setIncludeFontPadding(false);
         // 压掉 Button 主题自带的 minHeight/minWidth(88dip)
         ok.setMinimumHeight(0);
         ok.setMinimumWidth(0);
-        ok.setPadding(dp(14), dp(3), dp(14), dp(3));
+        ok.setPadding(dp(14), 0, dp(14), 0);
         android.graphics.drawable.GradientDrawable okBg =
                 new android.graphics.drawable.GradientDrawable();
         okBg.setCornerRadius(dp(8));
@@ -185,12 +185,12 @@ public class LockOverlayView extends FrameLayout {
                 return true;
             }
         });
-        // 显式固定高度,彻底不受 Button 主题 minHeight 影响
+        // 按原始截图实测比例:框高px(148),解锁键约为其2/3(px(96))
         unlockBox.addView(ok, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, dp(44)));
-        // 框高=输入框自然高度(与密码页一致)
+                ViewGroup.LayoutParams.WRAP_CONTENT, UiUtil.px(getContext(), 96)));
+        // 框高与密码页一致
         box.addView(unlockBox, new LinearLayout.LayoutParams(dp(680),
-                ViewGroup.LayoutParams.WRAP_CONTENT));
+                UiUtil.px(getContext(), 148)));
 
         unlockError = new TextView(getContext());
         unlockError.setTextColor(Color.parseColor("#E57373"));
