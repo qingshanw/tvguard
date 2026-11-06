@@ -924,7 +924,8 @@ public class MainActivity extends Activity {
      * 加/减按钮:
      *  - 触摸:按下立即生效,按住 0.45 秒后开始连发(先 150ms 一步,后加速到 90ms),松开停止;
      *  - 遥控器:OK 键长按由系统按键重复自然连发。
-     * 连发过程中只更新数值文本不重建界面(避免闪烁),松手/抬键时整页重绘一次同步其他显示。
+     * 全程只更新数值文本,绝不在此重建界面:手势进行中移除/重建视图会让事件流错乱
+     * (触摸落到重建后位置对应的其他按钮上)。依赖该数值的其他显示由每秒的状态刷新更新。
      */
     private Button stepButton(String text, final int delta, final StepperSpec spec, final TextView val) {
         final Button b = roundBtn(text);
@@ -935,8 +936,9 @@ public class MainActivity extends Activity {
             @Override
             public void run() {
                 ticks++;
-                // 手指已滑出按钮 / 按得过久(约15秒):停止连发
-                if (!b.isPressed() || ticks > 150) return;
+                // 手指已滑出按钮 / 视图已被重建 / 按得过久(约15秒):停止连发
+                if (!b.isPressed() || !b.isAttachedToWindow()
+                        || !val.isAttachedToWindow() || ticks > 150) return;
                 applyStep(spec, delta, val);
                 h.postDelayed(this, ticks < 8 ? 150 : 90);
             }
@@ -952,7 +954,6 @@ public class MainActivity extends Activity {
                     case android.view.MotionEvent.ACTION_UP:
                     case android.view.MotionEvent.ACTION_CANCEL:
                         h.removeCallbacks(repeat);
-                        renderPanels(); // 同步其他依赖该数值的显示
                         return true;
                 }
                 return false;
@@ -965,10 +966,6 @@ public class MainActivity extends Activity {
                         && (keyCode == android.view.KeyEvent.KEYCODE_DPAD_CENTER
                         || keyCode == android.view.KeyEvent.KEYCODE_ENTER)) {
                     applyStep(spec, delta, val);
-                    return true;
-                }
-                if (ev.getAction() == android.view.KeyEvent.ACTION_UP) {
-                    renderPanels();
                     return true;
                 }
                 return false;
