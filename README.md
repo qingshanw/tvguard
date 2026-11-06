@@ -10,6 +10,20 @@
 - 题库自定义:**Excel 模板** → 浏览器转换器 → JSON,支持 **U盘导入** 和 **手机局域网上传**;
 - 设置界面有**家长密码**保护(密码错误无法修改设置)。
 
+## 界面预览
+
+**家长设置**(左右双栏,一屏显示全部配置)
+
+<p align="center">
+  <img src="capture/settings.jpg" width="640" alt="家长设置">
+</p>
+
+**全屏答题(盖住视频画面,语/数/英随机出题)**
+
+| 语文 | 数学 | 英语 |
+|:---:|:---:|:---:|
+| <img src="capture/quiz-chinese.jpg" width="260"/> | <img src="capture/quiz-math.jpg" width="260"/> | <img src="capture/quiz-en.jpg" width="260"/> |
+
 ## 目录内容
 
 | 路径 | 说明 |
