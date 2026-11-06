@@ -600,28 +600,17 @@ public class MainActivity extends Activity {
                 renderPanels();
             }
         }));
-        TextView lanTip = smallLabel(lanOn
-                ? "● 已开启:手机浏览器访问\n   http://" + LanServer.getLocalIp() + ":" + LanServer.PORT
-                : "○ 未开启。开启后手机可给电视上传题库");
-        lanTip.setTextColor(Color.parseColor(lanOn ? "#4FC3F7" : "#78909C"));
-        lanTip.setPadding(0, dp(8), 0, 0);
-        lanCard.addView(lanTip);
+        if (lanOn) {
+            // 仅开启时显示上传地址(功能必需),未开启时不再显示提示小字
+            TextView lanTip = smallLabel("● 手机浏览器访问\n   http://"
+                    + LanServer.getLocalIp() + ":" + LanServer.PORT);
+            lanTip.setTextColor(Color.parseColor("#4FC3F7"));
+            lanTip.setPadding(0, dp(8), 0, 0);
+            lanCard.addView(lanTip);
+        }
         colRight.addView(lanCard);
 
-        // 当前状态
-        QuestionBank bank = new QuestionBank(this);
-        int total = bank.load(this);
-        long lockUntil = prefs.getLong(Prefs.KEY_LOCK_UNTIL, 0);
-        String status = "题库 " + total + " 题 | 待答 " + bank.activeCount()
-                + " 题 | 已毕业 " + bank.graduatedCount() + " 题";
-        TextView st = new TextView(this);
-        st.setText(status);
-        st.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(24));
-        st.setTextColor(Color.parseColor("#4FC3F7"));
-        st.setLineSpacing(dp(4), 1f);
-        st.setPadding(dp(4), dp(4), dp(4), dp(4));
-        colRight.addView(wrapLoose(st));
-
+        
         // 版本信息
         TextView ver = new TextView(this);
         ver.setText("视界守卫者 v" + appVersion() + " · by WangQingshan");
