@@ -207,6 +207,26 @@ public class PermissionActivity extends Activity {
         int ok = (overlayOk ? 1 : 0) + (bgOk ? 1 : 0) + (batteryOk ? 1 : 0) + (notifOk ? 1 : 0);
         tvSummary.setText("已开启 " + ok + " / 4 项");
         tvSummary.setTextColor(Color.parseColor(ok == 4 ? "#66BB6A" : "#FFB74D"));
+
+        // 5. 开机自启(应用自身的开关,非系统权限,不计入上面的统计)
+        final Prefs p = new Prefs(this);
+        final boolean bootOn = p.bootStart();
+        listBox.addView(permRow(
+                "开机自启",
+                "设备重启后自动恢复守护,无需家长重新打开应用。",
+                bootOn,
+                bootOn ? "关闭" : "开启",
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        p.putBool(Prefs.KEY_BOOT_START, !bootOn);
+                        Toast.makeText(PermissionActivity.this,
+                                bootOn ? "已关闭开机自启" : "已开启开机自启",
+                                Toast.LENGTH_SHORT).show();
+                        refresh();
+                    }
+                },
+                null, null));
     }
 
     /** 一行权限卡:标题 + 说明 + 状态(✓绿/未开启红) + 操作按钮。 */

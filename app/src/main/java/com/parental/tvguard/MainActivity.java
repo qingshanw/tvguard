@@ -442,16 +442,6 @@ public class MainActivity extends Activity {
         c3.addView(forceTip);
         colLeft.addView(c3);
 
-        LinearLayout c4 = card(CARD);
-        c4.addView(rowWithToggle("开机自启", prefs.bootStart(), new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                prefs.putBool(Prefs.KEY_BOOT_START, !prefs.bootStart());
-                renderPanels();
-            }
-        }));
-        colLeft.addView(c4);
-
         Button pwdBtn = bigButton("修改家长密码", "#37474F");
         pwdBtn.setOnClickListener(new View.OnClickListener() {
             @Override

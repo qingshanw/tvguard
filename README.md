@@ -23,10 +23,10 @@
 
 **全屏答题(盖住视频画面,语/数/英随机出题)与答错锁定休息**
 
-| | |
-|:---:|:---:|
-| **语文题**<br><img src="capture/quiz-chinese.jpg" width="260"/> | **数学题**<br><img src="capture/quiz-math.jpg" width="260"/> |
-| **英语题**<br><img src="capture/quiz-en.jpg" width="260"/> | **答错锁定 · 倒计时休息**<br><img src="capture/lock-rest.jpg" width="260"/> |
+| | | |
+|:---:|:---:|:---:|
+| **语文题**<br><img src="capture/quiz-chinese.jpg" width="260"/> | **数学题**<br><img src="capture/quiz-math.jpg" width="260"/> | **英语题**<br><img src="capture/quiz-en.jpg" width="260"/> |
+| | **答错锁定 · 倒计时休息**<br><img src="capture/lock-rest.jpg" width="260"/> | |
 
 ## 权限配置(重要,手机安装必看)
 
