@@ -38,6 +38,9 @@ public class QuizOverlayView extends android.widget.FrameLayout {
         void onMaxWrong();
     }
 
+    /** 播放提示音后到界面切换前的等待时长:确保声音完整播放完。 */
+    private static final long TRANSITION_DELAY_MS = 2000;
+
     private final QuestionBank bank;
     private final Listener listener;
     private final Prefs prefs;
@@ -328,7 +331,7 @@ public class QuizOverlayView extends android.widget.FrameLayout {
                 public void run() {
                     listener.onPassed();
                 }
-            }, 900);
+            }, TRANSITION_DELAY_MS);
         } else {
             SoundUtil.wrong(getContext());
             int streak = prefs.getInt(Prefs.KEY_WRONG_STREAK, 0) + 1;
@@ -348,14 +351,14 @@ public class QuizOverlayView extends android.widget.FrameLayout {
                     public void run() {
                         listener.onMaxWrong();
                     }
-                }, 1200);
+                }, TRANSITION_DELAY_MS);
             } else {
                 scheduleTransition(new Runnable() {
                     @Override
                     public void run() {
                         nextQuestion();
                     }
-                }, 1600);
+                }, TRANSITION_DELAY_MS);
             }
         }
     }

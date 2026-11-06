@@ -12,102 +12,88 @@
 package com.parental.tvguard;
 
 import android.content.Context;
-import android.media.AudioFormat;
+import android.media.AudioAttributes;
 import android.media.AudioManager;
-import android.media.AudioTrack;
+import android.media.SoundPool;
+import android.os.Build;
 
 /**
- * 答题提示音(AudioTrack 实时合成,无需音频资源文件):
- *  - 答对:上扬的清脆"叮—咚"双音,欢快
- *  - 答错:下行的低沉"呜—呜"双音,失落
- *  - 全部毕业:上行三连音庆祝
+ * 答题提示音(SoundPool 播放内置音频资源):
+ *  - 答对:上扬清脆的确认音(confirmation)
+ *  - 答错:低沉下滑的错误音(error)
+ *  - 全部毕业:明亮的庆祝音
+ *
+ * 音效来源:Kenney "Interface Sounds" 音效包(kenney.nl),
+ * 以 CC0 1.0 通用(CC0 1.0 Universal)许可发布,可自由使用、修改与再分发。
  */
 public final class SoundUtil {
 
-    private static final int SAMPLE_RATE = 22050;
+    private static SoundPool sPool;
+    private static int sIdCorrect;
+    private static int sIdWrong;
+    private static int sIdCheer;
+    private static boolean sLoaded;
 
     private SoundUtil() {
     }
 
-    /** 答对:上扬双音 叮—咚(1318Hz → 1568Hz,带高次谐波的清脆音色)。 */
+    /** 答对:上扬清脆的确认音。 */
     public static void correct(Context c) {
-        play(new double[]{1318.0, 1568.0}, new int[]{130, 220}, 0.9);
+        play(c, sIdCorrect);
     }
 
-    /** 答错:下行低沉双音 呜—呜(320Hz → 240Hz,带颤音的闷音色)。 */
+    /** 答错:低沉下滑的错误音。 */
     public static void wrong(Context c) {
-        play(new double[]{320.0, 240.0}, new int[]{260, 420}, 0.0);
+        play(c, sIdWrong);
     }
 
-    /** 毕业庆祝:上行三连音。 */
+    /** 全部毕业:明亮的庆祝音。 */
     public static void cheer(Context c) {
-        play(new double[]{1046.5, 1318.5, 1568.0}, new int[]{120, 120, 260}, 1.0);
+        play(c, sIdCheer);
     }
 
-    /**
-     * 合成并播放一段音列。
-     * @param freqs     每个音的频率(Hz)
-     * @param durations 每个音的时长(毫秒)
-     * @param bright    音色亮度 0~1:越大越清脆(高次谐波多),越小越低沉(谐波少+颤音)
-     */
-    private static void play(final double[] freqs, final int[] durations, final double bright) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                AudioTrack track = null;
-                try {
-                    int totalMs = 0;
-                    for (int d : durations) totalMs += d;
-                    int totalSamples = SAMPLE_RATE * totalMs / 1000 + SAMPLE_RATE / 10;
-                    short[] buf = new short[totalSamples];
-
-                    int pos = 0;
-                    for (int n = 0; n < freqs.length; n++) {
-                        double freq = freqs[n];
-                        int samples = SAMPLE_RATE * durations[n] / 1000;
-                        for (int i = 0; i < samples && pos < buf.length; i++, pos++) {
-                            double t = (double) i / SAMPLE_RATE;
-                            double progress = (double) i / samples;
-                            // 谐波:答对高亮(含2/3次谐波),答错暗淡(仅基波+轻微2次)
-                            double w = 2 * Math.PI * freq * t;
-                            double wave;
-                            if (bright > 0.5) {
-                                wave = Math.sin(w) + 0.45 * bright * Math.sin(2 * w)
-                                        + 0.2 * bright * Math.sin(3 * w);
-                            } else {
-                                // 低沉"呜":正弦波 + 轻微颤音(6Hz)
-                                double vib = 1.0 + 0.025 * Math.sin(2 * Math.PI * 6 * t);
-                                wave = Math.sin(w * vib) + 0.15 * Math.sin(2 * w * vib);
-                            }
-                            // 包络:快起音,指数衰减,音尾淡出
-                            double attack = Math.min(1.0, progress / 0.06);
-                            double release = Math.min(1.0, (1.0 - progress) / 0.35);
-                            double env = attack * release * Math.exp(-2.2 * progress);
-                            double v = wave * env * 0.32;
-                            if (v > 1.0) v = 1.0;
-                            if (v < -1.0) v = -1.0;
-                            buf[pos] = (short) (v * Short.MAX_VALUE);
-                        }
-                    }
-
-                    track = new AudioTrack(AudioManager.STREAM_MUSIC, SAMPLE_RATE,
-                            AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT,
-                            buf.length * 2, AudioTrack.MODE_STATIC);
-                    track.write(buf, 0, buf.length);
-                    track.play();
-                    Thread.sleep(totalMs + 150);
-                } catch (Throwable e) {
-                    // 音频设备被占用等情况静默失败,不影响答题流程
-                } finally {
-                    if (track != null) {
-                        try {
-                            track.stop();
-                            track.release();
-                        } catch (Throwable ignored) {
-                        }
-                    }
-                }
+    private static synchronized void ensureLoaded(Context c) {
+        if (sPool != null) return;
+        try {
+            SoundPool.Builder builder;
+            if (Build.VERSION.SDK_INT >= 21) {
+                AudioAttributes attrs = new AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build();
+                builder = new SoundPool.Builder().setMaxStreams(2).setAudioAttributes(attrs);
+            } else {
+                @SuppressWarnings("deprecation")
+                SoundPool legacy = new SoundPool(2, AudioManager.STREAM_MUSIC, 0);
+                builder = null;
+                sPool = legacy;
             }
-        }, "quiz-sound").start();
+            if (sPool == null) sPool = builder.build();
+            sPool.setOnLoadCompleteListener(new SoundPool.OnLoadCompleteListener() {
+                @Override
+                public void onLoadComplete(SoundPool pool, int sampleId, int status) {
+                    if (status == 0) sLoaded = true;
+                }
+            });
+            sIdCorrect = sPool.load(c.getApplicationContext(), R.raw.sound_correct, 1);
+            sIdWrong = sPool.load(c.getApplicationContext(), R.raw.sound_wrong, 1);
+            sIdCheer = sPool.load(c.getApplicationContext(), R.raw.sound_cheer, 1);
+        } catch (Throwable t) {
+            // 音频初始化失败时静默,不影响答题流程
+            sPool = null;
+        }
+    }
+
+    private static void play(Context c, int id) {
+        if (c == null) return;
+        try {
+            ensureLoaded(c);
+            if (sPool == null || id == 0) return;
+            // 未加载完成时播不出声音是常态,静默跳过即可
+            float vol = 1.0f;
+            sPool.play(id, vol, vol, 1, 0, 1.0f);
+        } catch (Throwable t) {
+            // 音频设备被占用等情况静默失败,不影响答题流程
+        }
     }
 }

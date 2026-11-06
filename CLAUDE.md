@@ -121,7 +121,7 @@ AlarmReceiver(60秒看门狗) ──→ 唤醒进程 + 补执行逾期的界面�
 ### 其他
 
 - `QuizActivity` 拦截 BACK 键；`QuizOverlayView` / `LockOverlayView` 通过 `dispatchKeyEventPreIme` 拦截 BACK；悬浮窗额外拦截 MENU 键并 `requestFocus()` 夺取输入焦点。
-- `SoundUtil` 用系统 `ToneGenerator` 发提示音，不带音频资源文件。
+- `SoundUtil` 用 `SoundPool` 播放 `res/raw/` 里的提示音（sound_correct / sound_wrong / sound_cheer），音效来自 Kenney "Interface Sounds"（CC0 公有领域）。`QuizOverlayView.TRANSITION_DELAY_MS`（2 秒）保证提示音播完后才切换界面。
 - `GuardDeviceAdminReceiver` 是空实现，仅为支持可选的设备所有者模式。
 - `HelpActivity` 是应用内的使用说明页（家长密码保护范围内）。
 

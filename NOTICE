@@ -16,8 +16,13 @@ Copyright (c) 2026 WangQingshan (https://github.com/qingshanw)
 内置内容声明:
   - 内置题库题目为项目作者原创编写;引用的中国古典诗词
     (如《登鹳雀楼》《题西林壁》等)属于公有领域作品。
-  - 应用图标由程序代码绘制生成,提示音由代码实时合成,
-    不包含任何第三方美术或音频素材。
+  - 应用图标由程序代码绘制生成,不包含任何第三方美术素材。
+  - 答题提示音(res/raw/sound_correct.wav、sound_wrong.wav、
+    sound_cheer.wav)截取自 Kenney "Interface Sounds" 音效包
+    (https://kenney.nl/assets/interface-sounds),
+    由 Kenney (www.kenney.nl) 制作,以 CC0 1.0 通用(CC0 1.0
+    Universal)许可发布,属公有领域,可自由使用、修改与再分发,
+    无署名义务。本文件中的出处说明仅为致谢。
 
 品牌名称声明:
   使用说明中提及的「华为、荣耀、小米、OPPO、vivo、三星、一加、
