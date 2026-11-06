@@ -146,8 +146,9 @@ public class QuizOverlayView extends android.widget.FrameLayout {
             b.setPadding(dp(24), dp(12), dp(24), dp(12));
             b.setMinimumHeight(dp(72));
             b.setBackground(optionBg(false));
+            // 触屏(手机):单击选项=直接作答,不引入"先聚焦再点击"的两段式;
+            // 遥控器(电视,非触摸模式):focusable 即可被焦点定位,按 OK/确认键才触发点击作答
             b.setFocusable(true);
-            b.setFocusableInTouchMode(true);
             b.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -169,8 +170,11 @@ public class QuizOverlayView extends android.widget.FrameLayout {
         optionBox.post(new Runnable() {
             @Override
             public void run() {
-                View first = optionBox.getChildAt(0);
-                if (first != null) first.requestFocus();
+                // 仅非触摸模式(遥控器)自动聚焦第一项,方便直接用方向键;触屏不需要
+                if (!isInTouchMode()) {
+                    View first = optionBox.getChildAt(0);
+                    if (first != null) first.requestFocus();
+                }
             }
         });
     }
