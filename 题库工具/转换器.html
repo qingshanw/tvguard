@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>题库转换器 - Excel 转 JSON</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  body { font-family: "Microsoft YaHei", sans-serif; max-width: 680px; margin: 40px auto; padding: 0 16px; color: #223; }
+  h1 { font-size: 22px; }
+  .card { border: 1px solid #ccd; border-radius: 10px; padding: 20px; margin: 16px 0; background: #f7f8fc; }
+  button { padding: 10px 26px; font-size: 16px; border: 0; border-radius: 8px; background: #283593; color: #fff; cursor: pointer; }
+  button:disabled { background: #999; }
+  input[type=file] { font-size: 15px; margin: 12px 0; }
+  #result { margin-top: 14px; font-size: 15px; white-space: pre-wrap; }
+  .ok { color: #2e7d32; } .err { color: #c62828; }
+  ol li { margin: 6px 0; }
+</style>
+</head>
+<body>
+<h1>📖 题库转换器(Excel → JSON)</h1>
+
+<div class="card">
+  <b>使用步骤:</b>
+  <ol>
+    <li>用 Excel / WPS 打开 <b>题库模板.xlsx</b>,按格式填入题目(表头不要改,"答案"列填 A/B/C/D);</li>
+    <li>保存后在下面选择这个 Excel 文件;</li>
+    <li>点击"转换为 JSON",把生成的 <b>questions.json</b> 拷到 U盘,或通过电视上的"局域网上传"直接上传。</li>
+  </ol>
+</div>
+
+<div class="card">
+  <input type="file" id="file" accept=".xlsx,.xls">
+  <br>
+  <button id="go" disabled>转换为 JSON</button>
+  <div id="result"></div>
+</div>
+
+<script>
+var wbData = null;
+document.getElementById('file').addEventListener('change', function (e) {
+  var f = e.target.files[0];
+  if (!f) return;
+  var reader = new FileReader();
+  reader.onload = function (ev) {
+    try {
+      wbData = XLSX.read(new Uint8Array(ev.target.result), { type: 'array' });
+      document.getElementById('go').disabled = false;
+      document.getElementById('result').textContent = '已读取:' + f.name + ',点击"转换为 JSON"';
+    } catch (err) {
+      document.getElementById('result').textContent = '读取失败:' + err.message;
+      document.getElementById('result').className = 'err';
+    }
+  };
+  reader.readAsArrayBuffer(f);
+});
+
+document.getElementById('go').addEventListener('click', function () {
+  if (!wbData) return;
+  var out = [];
+  var errs = [];
+  var sheet = wbData.Sheets[wbData.SheetNames[0]];
+  var rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+  // 找表头行,兼容题目从第2行开始
+  var start = 0;
+  for (var i = 0; i < Math.min(rows.length, 5); i++) {
+    if (String(rows[i][0]).indexOf('题目') >= 0) { start = i + 1; break; }
+  }
+  var letterMap = { A: 0, B: 1, C: 2, D: 3, E: 4, F: 5, a: 0, b: 1, c: 2, d: 3, e: 4, f: 5 };
+  var count = 0;
+  for (var r = start; r < rows.length; r++) {
+    var row = rows[r];
+    var q = String(row[0]).trim();
+    if (!q) continue; // 跳过空行和说明行
+    var opts = [];
+    for (var c = 1; c <= 4; c++) {
+      var o = String(row[c] === undefined ? '' : row[c]).trim();
+      if (o) opts.push(o);
+    }
+    var ansRaw = String(row[5] === undefined ? '' : row[5]).trim().toUpperCase();
+    if (opts.length < 2) { errs.push('第' + (r + 1) + '行「' + q + '」选项不足2个'); continue; }
+    if (!(ansRaw in letterMap) || letterMap[ansRaw] >= opts.length) {
+      errs.push('第' + (r + 1) + '行「' + q + '」答案列必须填 A/B/C/D(且对应已有选项)');
+      continue;
+    }
+    out.push({ q: q, options: opts, answer: letterMap[ansRaw] });
+    count++;
+  }
+  var resEl = document.getElementById('result');
+  if (count === 0) {
+    resEl.className = 'err';
+    resEl.textContent = '没有解析到有效题目。\n' + errs.join('\n');
+    return;
+  }
+  var json = JSON.stringify({ version: 1, name: 'Excel题库', questions: out }, null, 2);
+  var blob = new Blob([json], { type: 'application/json' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'questions.json';
+  a.click();
+  resEl.className = errs.length ? 'ok' : 'ok';
+  resEl.textContent = '✅ 成功转换 ' + count + ' 道题,已下载 questions.json\n' +
+    (errs.length ? '⚠ 有 ' + errs.length + ' 行未通过校验:\n' + errs.join('\n') : '');
+});
+</script>
+</body>
+</html>

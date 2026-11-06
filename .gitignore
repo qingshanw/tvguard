@@ -1,0 +1,21 @@
+# 构建产物与本地工具链(非项目文件)
+.gradle/
+build/
+app/build/
+.build-tmp/
+.sdk/
+local.properties
+*.log
+replay_*.log
+hs_err_*.log
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# 截图(本地测试用)
+截图/
+*.apk
+*.zip
+questions.json

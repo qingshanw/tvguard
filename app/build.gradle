@@ -1,0 +1,60 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.parental.tvguard'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.parental.tvguard"
+        minSdk 21          // Android 5.0,兼容绝大多数电视盒子
+        targetSdk 33       // 避开 Android 14 前台服务类型强制要求,侧载安装无商店限制
+        versionCode 27
+        versionName "1.26"
+    }
+
+    signingConfigs {
+        debug {
+            // 使用统一调试签名,方便用户覆盖安装
+        }
+        release {
+            // 专属签名:release.keystore(密码见 README;妥善保管,签名一致才能覆盖安装)
+            storeFile file("../release.keystore")
+            storePassword "tvguard2024"
+            keyAlias "tvguard"
+            keyPassword "tvguard2024"
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+// 运行时零第三方依赖;仅测试期用 Robolectric 在 JVM 上渲染界面截图
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.robolectric:robolectric:4.13'
+}
+
+android {
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+            all {
+                testLogging.showStandardStreams = true
+                maxHeapSize = '1024m'
+                systemProperty 'robolectric.pixelCopyRenderMode', 'hardware'
+            }
+        }
+    }
+}

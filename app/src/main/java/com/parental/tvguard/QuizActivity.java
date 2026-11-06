@@ -1,0 +1,177 @@
+package com.parental.tvguard;
+
+import android.app.Activity;
+import android.os.Build;
+import android.os.Bundle;
+import android.view.KeyEvent;
+import android.view.View;
+import android.view.WindowManager;
+
+/**
+ * 全屏答题界面(不透明,盖住视频画面)。
+ * 若当前处于锁定倒计时则显示倒计时,否则显示答题。
+ * 视图逻辑在 QuizOverlayView / LockOverlayView 中,与悬浮窗兜底共用。
+ */
+public class QuizActivity extends Activity {
+
+    private static QuizActivity sRunning; // 当前存活的实例(悬浮窗接管时由服务关闭)
+
+    private LockOverlayView lockView;
+    private QuizOverlayView quizView;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
+        MonitorService.quizShowing = true; // 与服务握手
+        sRunning = this;
+        // 弹窗真正显示,本轮观看时间清零
+        new Prefs(this).putInt(Prefs.KEY_WATCHED, 0);
+        tryPinScreen(); // 屏幕固定:固定期间主页/返回/最近任务全部失效
+
+        Prefs prefs = new Prefs(this);
+        View content;
+        if (prefs.getLong(Prefs.KEY_LOCK_UNTIL, 0) > System.currentTimeMillis()) {
+            lockView = new LockOverlayView(this, new Runnable() {
+                @Override
+                public void run() {
+                    // 锁定结束
+                    Prefs p = new Prefs(QuizActivity.this);
+                    p.putLong(Prefs.KEY_LOCK_UNTIL, 0);
+                    p.putInt(Prefs.KEY_WRONG_STREAK, 0);
+                    p.putInt(Prefs.KEY_WATCHED, 0);
+                    MonitorService.onQuizPassed(QuizActivity.this); // 清计时+恢复播放
+                    finish();
+                }
+            }, new Runnable() {
+                @Override
+                public void run() {
+                    // 试图退出,由服务兜底
+                }
+            });
+            content = lockView;
+        } else {
+            QuestionBank bank = new QuestionBank(this);
+            bank.load(this);
+            content = quizView = new QuizOverlayView(this, bank, new QuizOverlayView.Listener() {
+                @Override
+                public void onPassed() {
+                    MonitorService.onQuizPassed(QuizActivity.this);
+                    finish();
+                }
+
+                @Override
+                public void onMaxWrong() {
+                    MonitorService.startLock(QuizActivity.this);
+                    recreate(); // 切换为锁定倒计时视图
+                }
+            });
+        }
+        setContentView(content);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // 悬浮窗兜底已接管时,本 Activity 自动退出,避免悬浮窗消失后露出残留界面
+        if (MonitorService.isOverlayActive()) {
+            finish();
+            return;
+        }
+        MonitorService.quizShowing = true;
+        // 全屏沉浸
+        View decor = getWindow().getDecorView();
+        decor.setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                | View.SYSTEM_UI_FLAG_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        // 界面被隐藏(如按了主页键):立即通知服务,0.6秒内重新拉起,不等轮询
+        MonitorService svc = MonitorService.instance();
+        if (svc != null) svc.onQuizHidden();
+    }
+
+    /** 屏幕固定(Lock Task):设备所有者模式下静默生效;普通模式首次弹系统确认框。 */
+    private void tryPinScreen() {
+        try {
+            android.app.admin.DevicePolicyManager dpm = (android.app.admin.DevicePolicyManager)
+                    getSystemService(DEVICE_POLICY_SERVICE);
+            android.content.ComponentName admin =
+                    new android.content.ComponentName(this, GuardDeviceAdminReceiver.class);
+            if (dpm != null && dpm.isDeviceOwnerApp(getPackageName())) {
+                // 设备所有者:注册锁定任务白名单并静默固定,HOME 完全失效
+                dpm.setLockTaskPackages(admin, new String[]{getPackageName()});
+                startLockTask();
+            } else {
+                // 普通应用:请求屏幕固定,系统弹一次确认框,确认后 HOME 失效
+                startLockTask();
+            }
+        } catch (Throwable e) {
+            // 设备不支持或用户拒绝固定,仍由服务快速拉回兜底
+        }
+    }
+
+    private void unpinScreen() {
+        try {
+            if (Build.VERSION.SDK_INT < 23) {
+                return; // API 23 以下无法查询固定状态,stopLockTask 由系统自行处理
+            }
+            android.app.ActivityManager am = (android.app.ActivityManager)
+                    getSystemService(ACTIVITY_SERVICE);
+            if (am != null && am.getLockTaskModeState()
+                    != android.app.ActivityManager.LOCK_TASK_MODE_NONE) {
+                stopLockTask();
+            }
+        } catch (Throwable e) {
+            // ignore
+        }
+    }
+
+    /** 看门狗调用:冻结后补执行逾期的答题切换。 */
+    public static void recoverStuck() {
+        QuizActivity a = sRunning;
+        if (a != null && a.quizView != null) {
+            a.quizView.recoverIfStuck();
+        }
+    }
+
+    /** 供服务在悬浮窗接管时关闭孤儿 Activity。 */
+    public static void finishRunning() {
+        if (sRunning != null) {
+            try {
+                sRunning.finish();
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (sRunning == this) sRunning = null;
+        unpinScreen(); // 答题/锁定结束即解除固定
+        MonitorService.quizShowing = false;
+        MonitorService svc = MonitorService.instance();
+        if (svc != null) svc.onBlockingViewRemoved();
+        super.onDestroy();
+    }
+
+    @Override
+    public void onBackPressed() {
+        // 不允许退出;锁定模式下通知服务防绕过
+        if (lockView != null) lockView.notifyEscape();
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            onBackPressed();
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+}

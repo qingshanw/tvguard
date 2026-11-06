@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">视界守卫者</string>
+    <string name="main_title">视界守卫者 · 家长设置</string>
+    <string name="quiz_title">⏰ 观看时间到!回答问题才能继续看</string>
+    <string name="no_questions">题库为空,请联系家长导入题目</string>
+    <string name="answer_correct">✅ 答对了!马上继续观看</string>
+    <string name="answer_wrong">❌ 答错了,正确答案是绿色那道。还剩 %1$d 次机会</string>
+    <string name="lock_title">😅 连续答错太多啦,让眼睛休息一下</string>
+    <string name="lock_hint">休息结束后电视会自动恢复,期间请远离屏幕,看看远处放松眼睛</string>
+</resources>
