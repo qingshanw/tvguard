@@ -334,7 +334,20 @@ public class MonitorService extends Service {
                 android.graphics.PixelFormat.OPAQUE);
         try {
             wm.addView(v, lp);
+            // 夺取输入焦点并拦截返回/菜单键,防止按键绕过答题界面
+            // (主页键由系统处理无法拦截,但悬浮窗始终盖在最上层,且会被自动重新拉起)
+            v.setFocusable(true);
+            v.setFocusableInTouchMode(true);
+            v.requestFocus();
+            v.setOnKeyListener(new View.OnKeyListener() {
+                @Override
+                public boolean onKey(View vv, int keyCode, android.view.KeyEvent event) {
+                    return keyCode == android.view.KeyEvent.KEYCODE_BACK
+                            || keyCode == android.view.KeyEvent.KEYCODE_MENU;
+                }
+            });
             displayFailCount = 0;
+            cancelBlockedNotice();
             // 弹窗真正显示,本轮观看时间清零
             new Prefs(this).putInt(Prefs.KEY_WATCHED, 0);
             // 悬浮窗接管成功,关闭没能到前台的孤儿答题 Activity
@@ -361,6 +374,50 @@ public class MonitorService extends Service {
     /** 悬浮窗兜底是否正在显示(此时 Activity 已被关闭)。 */
     public static boolean isOverlayActive() {
         return overlayActive;
+    }
+
+    /** 弹窗被系统拦截时,通知家长去授权(点击直达设置页)。 */
+    private void notifyBlocked() {
+        try {
+            android.app.NotificationManager nm =
+                    (android.app.NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm == null) return;
+            android.app.NotificationChannel ch = new android.app.NotificationChannel(
+                    "blocked", "弹窗拦截提醒", android.app.NotificationManager.IMPORTANCE_HIGH);
+            nm.createNotificationChannel(ch);
+            Intent it = new Intent(this, MainActivity.class)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            android.app.PendingIntent pi = android.app.PendingIntent.getActivity(
+                    this, 2002, it,
+                    android.app.PendingIntent.FLAG_UPDATE_CURRENT
+                            | android.app.PendingIntent.FLAG_IMMUTABLE);
+            boolean overlayOk = android.provider.Settings.canDrawOverlays(this);
+            String why = overlayOk
+                    ? "请到系统设置允许「后台弹出界面」权限,点此查看指引"
+                    : "悬浮窗权限未授权,点此去授权";
+            android.app.Notification n = new android.app.Notification.Builder(this, "blocked")
+                    .setContentTitle("孩子观看时间已到,但弹窗被系统拦截")
+                    .setContentText(why)
+                    .setStyle(new android.app.Notification.BigTextStyle()
+                            .bigText(why + "\n(若是新安装/升级,系统可能重置了权限)"))
+                    .setSmallIcon(android.R.drawable.ic_dialog_alert)
+                    .setContentIntent(pi)
+                    .setAutoCancel(true)
+                    .build();
+            nm.notify(2, n);
+        } catch (Exception e) {
+            Log.e(TAG, "notifyBlocked failed", e);
+        }
+    }
+
+    /** 弹窗成功显示后,撤销拦截提醒。 */
+    private void cancelBlockedNotice() {
+        try {
+            android.app.NotificationManager nm =
+                    (android.app.NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm != null) nm.cancel(2);
+        } catch (Exception ignored) {
+        }
     }
 
     /** 看门狗闹钟调用:检查答题界面是否有逾期的切换未执行(进程冻结自愈)。 */
