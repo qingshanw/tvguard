@@ -17,6 +17,7 @@ import android.util.TypedValue;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.KeyEvent;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -79,12 +80,45 @@ public class PasswordActivity extends Activity {
             root.addView(inputConfirm, matchWrap(dp(0), dp(12)));
         }
 
+        // 密码输入框 + 右侧确认按钮(键盘回车/遥控器OK仍然可用)
+        LinearLayout inputRow = new LinearLayout(this);
+        inputRow.setOrientation(LinearLayout.HORIZONTAL);
+        inputRow.setGravity(Gravity.CENTER_VERTICAL);
+
         input = new EditText(this);
         input.setHint(mode == MODE_VERIFY ? "密码" : "新密码(4-8位数字)");
         input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER
                 | android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD);
         styleInput(input);
-        root.addView(input, matchWrap(dp(0), dp(12)));
+        inputRow.addView(input, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        android.widget.Button ok = new android.widget.Button(this,
+                null, android.R.attr.borderlessButtonStyle);
+        ok.setText("确认");
+        ok.setTextSize(TypedValue.COMPLEX_UNIT_PX, UiUtil.px(this, UiUtil.TEXT_OPTION));
+        ok.setTextColor(Color.WHITE);
+        ok.setAllCaps(false);
+        ok.setIncludeFontPadding(false);
+        ok.setPadding(dp(24), dp(12), dp(24), dp(12));
+        ok.setMinimumHeight(dp(56));
+        android.graphics.drawable.GradientDrawable okBg =
+                new android.graphics.drawable.GradientDrawable();
+        okBg.setCornerRadius(dp(10));
+        okBg.setColor(Color.parseColor("#2E63E7"));
+        ok.setBackground(okBg);
+        ok.setFocusable(true);
+        ok.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                submit();
+            }
+        });
+        LinearLayout.LayoutParams okLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        okLp.leftMargin = dp(12);
+        inputRow.addView(ok, okLp);
+        root.addView(inputRow, matchWrap(dp(0), dp(12)));
 
         tvError = new TextView(this);
         tvError.setTextColor(Color.parseColor("#E57373"));
@@ -93,7 +127,7 @@ public class PasswordActivity extends Activity {
         root.addView(tvError, matchWrap(dp(0), dp(12)));
 
         TextView hint = new TextView(this);
-        hint.setText("输入完成后按遥控器 OK / 回车 确认");
+        hint.setText("输入完成后点「确认」,或按遥控器 OK / 回车");
         hint.setTextColor(Color.parseColor("#78909C"));
         hint.setTextSize(TypedValue.COMPLEX_UNIT_PX, UiUtil.px(this, UiUtil.TEXT_LABEL));
         hint.setGravity(Gravity.CENTER);
