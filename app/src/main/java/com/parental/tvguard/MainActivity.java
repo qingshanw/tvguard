@@ -392,13 +392,12 @@ public class MainActivity extends Activity {
 
         LinearLayout c2 = card(CARD);
         c2.addView(stepperRow("弹题间隔", new StepperSpec() {
-            public int get() { return prefs.intervalSec(); }
-            public void set(int v) { prefs.putInt(Prefs.KEY_INTERVAL, v); }
-            public String format(int v) { return v % 60 == 0 ? (v / 60) + " 分钟" : v + " 秒"; }
-            public int step() { return 60; }
-            public int min() { return 60; }
-            public int max() { return 24 * 3600; }
-            public boolean timeUnit() { return true; }
+            public int get() { return (prefs.intervalSec() + 59) / 60; }
+            public void set(int v) { prefs.putInt(Prefs.KEY_INTERVAL, v * 60); }
+            public String format(int v) { return v + " 分钟"; }
+            public int step() { return 1; }
+            public int min() { return 1; }
+            public int max() { return 24 * 60; }
         }));
         c2.addView(hGap());
         c2.addView(stepperRow("连错锁定", new StepperSpec() {
@@ -408,42 +407,39 @@ public class MainActivity extends Activity {
             public int step() { return 1; }
             public int min() { return 1; }
             public int max() { return 10; }
-            public boolean timeUnit() { return false; }
         }));
         c2.addView(hGap());
         c2.addView(stepperRow("答错锁屏", new StepperSpec() {
-            public int get() { return prefs.lockSec(); }
-            public void set(int v) { prefs.putInt(Prefs.KEY_LOCK_SEC, v); }
-            public String format(int v) { return v % 60 == 0 ? (v / 60) + " 分钟" : v + " 秒"; }
-            public int step() { return 60; }
-            public int min() { return 60; }
-            public int max() { return 24 * 3600; }
-            public boolean timeUnit() { return true; }
+            public int get() { return (prefs.lockSec() + 59) / 60; }
+            public void set(int v) { prefs.putInt(Prefs.KEY_LOCK_SEC, v * 60); }
+            public String format(int v) { return v + " 分钟"; }
+            public int step() { return 1; }
+            public int min() { return 1; }
+            public int max() { return 24 * 60; }
         }));
         colLeft.addView(c2);
 
         // 强制休息(独立于答题,每连续观看N分钟直接锁定M分钟)
         LinearLayout c3 = card(CARD);
         c3.addView(stepperRow("连续观看", new StepperSpec() {
-            public int get() { return prefs.forceIntervalSec(); }
-            public void set(int v) { prefs.putInt(Prefs.KEY_FORCE_INTERVAL, v); }
-            public String format(int v) {
-                return v == 0 ? "关闭" : (v % 60 == 0 ? (v / 60) + " 分钟" : v + " 秒");
+            public int get() {
+                int v = prefs.forceIntervalSec();
+                return v == 0 ? 0 : (v + 59) / 60;
             }
-            public int step() { return 300; }
+            public void set(int v) { prefs.putInt(Prefs.KEY_FORCE_INTERVAL, v * 60); }
+            public String format(int v) { return v == 0 ? "关闭" : v + " 分钟"; }
+            public int step() { return 1; }
             public int min() { return 0; }
-            public int max() { return 24 * 3600; }
-            public boolean timeUnit() { return true; }
+            public int max() { return 24 * 60; }
         }));
         c3.addView(hGap());
         c3.addView(stepperRow("强制休息", new StepperSpec() {
-            public int get() { return prefs.forceLockSec(); }
-            public void set(int v) { prefs.putInt(Prefs.KEY_FORCE_LOCK, v); }
-            public String format(int v) { return v % 60 == 0 ? (v / 60) + " 分钟" : v + " 秒"; }
-            public int step() { return 300; }
-            public int min() { return 30; }
-            public int max() { return 24 * 3600; }
-            public boolean timeUnit() { return true; }
+            public int get() { return (prefs.forceLockSec() + 59) / 60; }
+            public void set(int v) { prefs.putInt(Prefs.KEY_FORCE_LOCK, v * 60); }
+            public String format(int v) { return v + " 分钟"; }
+            public int step() { return 1; }
+            public int min() { return 1; }
+            public int max() { return 24 * 60; }
         }));
         c3.addView(hGap());
         TextView forceTip = smallLabel("连续观看达到设定时长后,不看题直接强制休息");
@@ -853,7 +849,7 @@ public class MainActivity extends Activity {
         return box;
     }
 
-    /** 步进行参数:取值/写入/显示/范围/步长/是否时间量(时间量支持带单位直接输入)。 */
+    /** 步进行参数:取值/写入/显示/范围/步长(时间量的单位统一为分钟)。 */
     private interface StepperSpec {
         int get();
 
@@ -866,8 +862,6 @@ public class MainActivity extends Activity {
         int min();
 
         int max();
-
-        boolean timeUnit();
     }
 
     /** 卡片内一行:标签 + 数值(可点击直接输入) + 圆形加减按钮(支持长按连发)。 */
@@ -984,18 +978,14 @@ public class MainActivity extends Activity {
     private void showStepperInput(final String name, final StepperSpec spec) {
         final android.widget.EditText input = new android.widget.EditText(this);
         int cur = spec.get();
-        boolean byMinute = spec.timeUnit() && (spec.format(cur).contains("分钟") || cur == 0);
-        input.setText(String.valueOf(byMinute ? cur / 60 : cur));
+        input.setText(String.valueOf(cur));
         input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
         input.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(30));
         input.setTextColor(Color.WHITE);
         input.setSelection(input.getText().length());
         int inPad = dp(16);
         input.setPadding(inPad, inPad, inPad, inPad);
-        String hint = spec.timeUnit()
-                ? "输入数字(单位:" + (byMinute ? "分钟" : "秒") + "),也可带单位:如 15分 / 90秒"
-                : "输入 " + spec.min() + "-" + spec.max() + " 的数字";
-        input.setHint(hint);
+        input.setHint("输入 " + spec.min() + "-" + spec.max() + " 的数字");
         android.widget.FrameLayout holder = new android.widget.FrameLayout(this);
         int hPad = dp(24);
         holder.setPadding(hPad, dp(10), hPad, 0);
@@ -1007,7 +997,7 @@ public class MainActivity extends Activity {
                 .setPositiveButton("确定", new android.content.DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(android.content.DialogInterface d, int which) {
-                        int v = parseStepperInput(input.getText().toString(), spec, byMinute);
+                        int v = parseStepperInput(input.getText().toString());
                         if (v < 0) {
                             Toast.makeText(MainActivity.this, "输入无效", Toast.LENGTH_SHORT).show();
                             return;
@@ -1020,27 +1010,11 @@ public class MainActivity extends Activity {
                 .show();
     }
 
-    /**
-     * 解析输入:时间行支持 "20"/"15分"/"90秒"(含 m/s 后缀)。
-     * 无后缀的数字按当前显示单位(分钟时×60);显式带"秒/s"后缀才按秒。无效返回 -1。
-     */
-    private static int parseStepperInput(String s, StepperSpec spec, boolean byMinute) {
+    /** 解析输入的整数,非法返回 -1。 */
+    private static int parseStepperInput(String s) {
         if (s == null) return -1;
-        s = s.trim().toLowerCase().replace("分钟", "分");
-        long mult = 1;
-        if (spec.timeUnit()) {
-            if (s.endsWith("分") || s.endsWith("m")) {
-                mult = 60;
-                s = s.replaceAll("分|m$", "");
-            } else if (s.endsWith("秒") || s.endsWith("s")) {
-                mult = 1;
-                s = s.replaceAll("秒|s$", "");
-            } else {
-                mult = byMinute ? 60 : 1;
-            }
-        }
         try {
-            long v = Long.parseLong(s.trim()) * mult;
+            long v = Long.parseLong(s.trim());
             return v > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) v;
         } catch (NumberFormatException e) {
             return -1;
