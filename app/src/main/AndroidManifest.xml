@@ -72,7 +72,6 @@
             android:launchMode="singleInstance"
             android:showWhenLocked="true"
             android:turnScreenOn="true"
-            android:screenOrientation="landscape"
             android:taskAffinity=""
             android:theme="@style/QuizTheme" />
 
