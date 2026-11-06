@@ -614,8 +614,7 @@ public class MainActivity extends Activity {
                 + " | 悬浮窗权限" + (saw ? "√" : "×")
                 + " | Activity创建" + QuizActivity.createCount
                 + "次/获焦点" + QuizActivity.focusCount + "次"
-                + " | 弹窗失败" + MonitorService.getDisplayFailCount() + "次"
-                + "\n(点此打开厂商后台权限设置)";
+                + " | 弹窗失败" + MonitorService.getDisplayFailCount() + "次";
     }
 
     /** 打开各厂商的后台权限设置页(自启动/后台弹出/关联启动),失败则退回应用详情。 */
