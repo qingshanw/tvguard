@@ -1,0 +1,28 @@
+视界守卫者 (Focus Quiz Guard)
+Copyright (c) 2026 WangQingshan (https://github.com/qingshanw)
+
+本产品包含的源代码遵循 Apache License 2.0(见 LICENSE 文件)。
+
+运行时零第三方依赖声明:
+  本应用的 APK 分发包中不包含任何第三方运行时库代码,仅使用
+  Android 系统框架 API (android.*)。因此 APK 的再分发不涉及
+  任何第三方开源许可证义务。
+
+构建与测试期依赖(不随 APK 分发,仅用于本地构建/测试):
+  - Android Gradle Plugin / Gradle  — Apache License 2.0
+  - Robolectric                     — Apache License 2.0
+  - JUnit 4                         — Eclipse Public License 1.0
+
+内置内容声明:
+  - 内置题库题目为项目作者原创编写;引用的中国古典诗词
+    (如《登鹳雀楼》《题西林壁》等)属于公有领域作品。
+  - 应用图标由程序代码绘制生成,提示音由代码实时合成,
+    不包含任何第三方美术或音频素材。
+
+品牌名称声明:
+  使用说明中提及的「华为、荣耀、小米、OPPO、vivo、三星、一加、
+  iQOO」等名称,仅用于指示各手机系统设置界面的位置,便于用户
+  操作。本应用与上述公司无任何关联、合作或背书关系。
+
+隐私声明:
+  本应用不收集、不上传任何用户数据。详见 PRIVACY.md。
