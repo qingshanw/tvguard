@@ -250,22 +250,43 @@ public class MainActivity extends Activity {
             }
         }, 1000);
 
-        LinearLayout columns = new LinearLayout(this);
-        columns.setOrientation(LinearLayout.HORIZONTAL);
-        columns.setGravity(Gravity.CENTER);
+        boolean landscape = getResources().getConfiguration().orientation
+                == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
 
-        // 每栏 = 固定标题 + 可滚动内容区(内容超高时可滚动,不再裁切)
         colLeft = newPanel();
         colRight = newPanel();
-        columns.addView(makeColumn("⚙ 监控规则", colLeft),
-                new LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
-        columns.addView(makeColumn("📚 题库与状态", colRight),
-                new LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
 
-        root.addView(columns, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        if (landscape) {
+            // 横屏:左右双栏,每栏 = 固定标题 + 可滚动内容区
+            LinearLayout columns = new LinearLayout(this);
+            columns.setOrientation(LinearLayout.HORIZONTAL);
+            columns.setGravity(Gravity.CENTER);
+            columns.addView(makeColumn("⚙ 监控规则", colLeft),
+                    new LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
+            columns.addView(makeColumn("📚 题库与状态", colRight),
+                    new LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
+            root.addView(columns, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        } else {
+            // 竖屏:单列上下排列,整页滚动
+            ScrollView pageScroll = new ScrollView(this);
+            pageScroll.setFillViewport(true);
+            pageScroll.setVerticalScrollBarEnabled(false);
+            LinearLayout page = new LinearLayout(this);
+            page.setOrientation(LinearLayout.VERTICAL);
+            pageScroll.addView(page, new ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+            page.addView(sectionTitle("⚙ 监控规则"));
+            page.addView(colLeft);
+            page.addView(sectionTitle("📚 题库与状态"));
+            page.addView(colRight);
+
+            root.addView(pageScroll, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        }
 
         // 「完成」按钮:保存并退到后台,开始计时
         Button done = new Button(this, null, android.R.attr.borderlessButtonStyle);
@@ -296,6 +317,22 @@ public class MainActivity extends Activity {
 
         setContentView(root);
         if (unlocked) renderPanels();
+    }
+
+    /** 竖屏模式下的栏目标题。 */
+    private TextView sectionTitle(String title) {
+        TextView t = new TextView(this);
+        t.setText(title);
+        t.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(30));
+        t.setTextColor(Color.parseColor(ACCENT_CYAN));
+        t.setTypeface(null, Typeface.BOLD);
+        t.setGravity(Gravity.CENTER);
+        t.setMinHeight(dp(64));
+        LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        tp.topMargin = dp(8);
+        t.setLayoutParams(tp);
+        return t;
     }
 
     /** 一栏 = 固定栏目标题 + ScrollView 内容。 */
