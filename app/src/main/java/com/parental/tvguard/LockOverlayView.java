@@ -187,8 +187,8 @@ public class LockOverlayView extends FrameLayout {
         // 显式固定高度,彻底不受 Button 主题 minHeight 影响
         unlockBox.addView(ok, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, dp(44)));
-        // 输入框整体定高(约按钮的1.6倍),比例与密码页一致
-        box.addView(unlockBox, new LinearLayout.LayoutParams(dp(680), dp(72)));
+        // 输入框整体定高(与旧版等高),比例与密码页一致
+        box.addView(unlockBox, new LinearLayout.LayoutParams(dp(680), dp(88)));
 
         unlockError = new TextView(getContext());
         unlockError.setTextColor(Color.parseColor("#E57373"));
