@@ -383,51 +383,60 @@ public class MainActivity extends Activity {
         colLeft.addView(c1);
 
         LinearLayout c2 = card(CARD);
-        c2.addView(stepperRow("弹题间隔", intervalText(), -60, 60, new StepperCallback() {
-            @Override
-            public void onChange(int delta) {
-                prefs.putInt(Prefs.KEY_INTERVAL, clamp(prefs.intervalSec() + delta, 60, 24 * 3600));
-                renderPanels();
-            }
+        c2.addView(stepperRow("弹题间隔", new StepperSpec() {
+            public int get() { return prefs.intervalSec(); }
+            public void set(int v) { prefs.putInt(Prefs.KEY_INTERVAL, v); }
+            public String format(int v) { return v % 60 == 0 ? (v / 60) + " 分钟" : v + " 秒"; }
+            public int step() { return 60; }
+            public int min() { return 60; }
+            public int max() { return 24 * 3600; }
+            public boolean timeUnit() { return true; }
         }));
         c2.addView(hGap());
-        c2.addView(stepperRow("连错锁定", prefs.maxWrong() + " 题", -1, 1, new StepperCallback() {
-            @Override
-            public void onChange(int delta) {
-                prefs.putInt(Prefs.KEY_MAX_WRONG, clamp(prefs.maxWrong() + delta, 1, 10));
-                renderPanels();
-            }
+        c2.addView(stepperRow("连错锁定", new StepperSpec() {
+            public int get() { return prefs.maxWrong(); }
+            public void set(int v) { prefs.putInt(Prefs.KEY_MAX_WRONG, v); }
+            public String format(int v) { return v + " 题"; }
+            public int step() { return 1; }
+            public int min() { return 1; }
+            public int max() { return 10; }
+            public boolean timeUnit() { return false; }
         }));
         c2.addView(hGap());
-        c2.addView(stepperRow("答错锁屏", lockText(), -60, 60, new StepperCallback() {
-            @Override
-            public void onChange(int delta) {
-                prefs.putInt(Prefs.KEY_LOCK_SEC, clamp(prefs.lockSec() + delta, 60, 24 * 3600));
-                renderPanels();
-            }
+        c2.addView(stepperRow("答错锁屏", new StepperSpec() {
+            public int get() { return prefs.lockSec(); }
+            public void set(int v) { prefs.putInt(Prefs.KEY_LOCK_SEC, v); }
+            public String format(int v) { return v % 60 == 0 ? (v / 60) + " 分钟" : v + " 秒"; }
+            public int step() { return 60; }
+            public int min() { return 60; }
+            public int max() { return 24 * 3600; }
+            public boolean timeUnit() { return true; }
         }));
         colLeft.addView(c2);
 
         // 强制休息(独立于答题,每连续观看N分钟直接锁定M分钟)
         LinearLayout c3 = card(CARD);
-        c3.addView(stepperRow("连续观看", forceIntervalText(), -300, 300, new StepperCallback() {
-            @Override
-            public void onChange(int delta) {
-                prefs.putInt(Prefs.KEY_FORCE_INTERVAL,
-                        clamp(prefs.forceIntervalSec() + delta, 0, 24 * 3600));
-                renderPanels();
+        c3.addView(stepperRow("连续观看", new StepperSpec() {
+            public int get() { return prefs.forceIntervalSec(); }
+            public void set(int v) { prefs.putInt(Prefs.KEY_FORCE_INTERVAL, v); }
+            public String format(int v) {
+                return v == 0 ? "关闭" : (v % 60 == 0 ? (v / 60) + " 分钟" : v + " 秒");
             }
+            public int step() { return 300; }
+            public int min() { return 0; }
+            public int max() { return 24 * 3600; }
+            public boolean timeUnit() { return true; }
         }));
         c3.addView(hGap());
-        c3.addView(stepperRow("强制休息", (prefs.forceLockSec() / 60) + " 分钟", -300, 300,
-                new StepperCallback() {
-                    @Override
-                    public void onChange(int delta) {
-                        prefs.putInt(Prefs.KEY_FORCE_LOCK,
-                                clamp(prefs.forceLockSec() + delta, 30, 24 * 3600));
-                        renderPanels();
-                    }
-                }));
+        c3.addView(stepperRow("强制休息", new StepperSpec() {
+            public int get() { return prefs.forceLockSec(); }
+            public void set(int v) { prefs.putInt(Prefs.KEY_FORCE_LOCK, v); }
+            public String format(int v) { return v % 60 == 0 ? (v / 60) + " 分钟" : v + " 秒"; }
+            public int step() { return 300; }
+            public int min() { return 30; }
+            public int max() { return 24 * 3600; }
+            public boolean timeUnit() { return true; }
+        }));
         c3.addView(hGap());
         TextView forceTip = smallLabel("连续观看达到设定时长后,不看题直接强制休息");
         c3.addView(forceTip);
@@ -759,30 +768,11 @@ public class MainActivity extends Activity {
         }
     }
 
-    private String intervalText() {
-        int v = prefs.intervalSec();
-        return v % 60 == 0 ? (v / 60) + " 分钟" : v + " 秒";
-    }
-
-    private String lockText() {
-        int v = prefs.lockSec();
-        return v % 60 == 0 ? (v / 60) + " 分钟" : v + " 秒";
-    }
-
-    private String forceIntervalText() {
-        int v = prefs.forceIntervalSec();
-        return v == 0 ? "关闭" : (v % 60 == 0 ? (v / 60) + " 分钟" : v + " 秒");
-    }
-
     private int clamp(int v, int min, int max) {
         return v < min ? min : (v > max ? max : v);
     }
 
     // ---- 控件工厂 ----
-
-    private interface StepperCallback {
-        void onChange(int delta);
-    }
 
     private TextView panelTitle(String text) {
         TextView t = new TextView(this);
@@ -865,9 +855,25 @@ public class MainActivity extends Activity {
         return box;
     }
 
-    /** 卡片内一行:标签 + 数值 + 圆形加减按钮。 */
-    private LinearLayout stepperRow(String name, String value, final int stepDown, final int stepUp,
-                                    final StepperCallback cb) {
+    /** 步进行参数:取值/写入/显示/范围/步长/是否时间量(时间量支持带单位直接输入)。 */
+    private interface StepperSpec {
+        int get();
+
+        void set(int value);
+
+        String format(int value);
+
+        int step();
+
+        int min();
+
+        int max();
+
+        boolean timeUnit();
+    }
+
+    /** 卡片内一行:标签 + 数值(可点击直接输入) + 圆形加减按钮(支持长按连发)。 */
+    private LinearLayout stepperRow(String name, final StepperSpec spec) {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.HORIZONTAL);
         box.setGravity(Gravity.CENTER_VERTICAL);
@@ -881,33 +887,155 @@ public class MainActivity extends Activity {
         box.addView(label);
 
         final TextView val = new TextView(this);
-        val.setText(value);
+        val.setText(spec.format(spec.get()));
         val.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(28));
         val.setTextColor(Color.parseColor("#FFD54F"));
         val.setGravity(Gravity.CENTER);
         val.setMinWidth(dp(130));
+        val.setBackground(roundBg("#182742", dp(8))); // 提示可点击输入
+        val.setFocusable(true);
+        val.setOnFocusChangeListener(focusGlow());
+        val.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showStepperInput(name, spec);
+            }
+        });
         box.addView(val, new LinearLayout.LayoutParams(dp(150), dp(64)));
 
-        Button minus = roundBtn("－");
-        minus.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                cb.onChange(stepDown);
-            }
-        });
-        box.addView(minus, new LinearLayout.LayoutParams(dp(72), dp(64)));
+        box.addView(stepButton("－", -spec.step(), spec, val),
+                new LinearLayout.LayoutParams(dp(72), dp(64)));
 
-        Button plus = roundBtn("＋");
-        plus.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                cb.onChange(stepUp);
-            }
-        });
         LinearLayout.LayoutParams pp = new LinearLayout.LayoutParams(dp(72), dp(64));
         pp.leftMargin = dp(10);
-        box.addView(plus, pp);
+        box.addView(stepButton("＋", spec.step(), spec, val), pp);
         return box;
+    }
+
+    /** 步进一次(含范围钳制),并即时刷新数值显示。 */
+    private void applyStep(StepperSpec spec, int delta, TextView val) {
+        int nv = clamp(spec.get() + delta, spec.min(), spec.max());
+        if (nv == spec.get()) return;
+        spec.set(nv);
+        val.setText(spec.format(nv));
+    }
+
+    /**
+     * 加/减按钮:
+     *  - 触摸:按下立即生效,按住 0.45 秒后开始连发(先 150ms 一步,后加速到 90ms),松开停止;
+     *  - 遥控器:OK 键长按由系统按键重复自然连发。
+     * 连发过程中只更新数值文本不重建界面(避免闪烁),松手/抬键时整页重绘一次同步其他显示。
+     */
+    private Button stepButton(String text, final int delta, final StepperSpec spec, final TextView val) {
+        final Button b = roundBtn(text);
+        final android.os.Handler h = new android.os.Handler(android.os.Looper.getMainLooper());
+        final Runnable repeat = new Runnable() {
+            private int ticks;
+
+            @Override
+            public void run() {
+                ticks++;
+                // 手指已滑出按钮 / 按得过久(约15秒):停止连发
+                if (!b.isPressed() || ticks > 150) return;
+                applyStep(spec, delta, val);
+                h.postDelayed(this, ticks < 8 ? 150 : 90);
+            }
+        };
+        b.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, android.view.MotionEvent ev) {
+                switch (ev.getActionMasked()) {
+                    case android.view.MotionEvent.ACTION_DOWN:
+                        applyStep(spec, delta, val);
+                        h.postDelayed(repeat, 450);
+                        return true;
+                    case android.view.MotionEvent.ACTION_UP:
+                    case android.view.MotionEvent.ACTION_CANCEL:
+                        h.removeCallbacks(repeat);
+                        renderPanels(); // 同步其他依赖该数值的显示
+                        return true;
+                }
+                return false;
+            }
+        });
+        b.setOnKeyListener(new View.OnKeyListener() {
+            @Override
+            public boolean onKey(View v, int keyCode, android.view.KeyEvent ev) {
+                if (ev.getAction() == android.view.KeyEvent.ACTION_DOWN
+                        && (keyCode == android.view.KeyEvent.KEYCODE_DPAD_CENTER
+                        || keyCode == android.view.KeyEvent.KEYCODE_ENTER)) {
+                    applyStep(spec, delta, val);
+                    return true;
+                }
+                if (ev.getAction() == android.view.KeyEvent.ACTION_UP) {
+                    renderPanels();
+                    return true;
+                }
+                return false;
+            }
+        });
+        return b;
+    }
+
+    /** 点击数值直接输入:时间行接受 "20"/"15分"/"90秒"(数字按当前显示单位),题数行接受 1-10。 */
+    private void showStepperInput(final String name, final StepperSpec spec) {
+        final android.widget.EditText input = new android.widget.EditText(this);
+        int cur = spec.get();
+        boolean byMinute = spec.timeUnit() && spec.format(cur).contains("分钟");
+        input.setText(String.valueOf(byMinute ? cur / 60 : cur));
+        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        input.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(30));
+        input.setTextColor(Color.WHITE);
+        input.setSelection(input.getText().length());
+        int inPad = dp(16);
+        input.setPadding(inPad, inPad, inPad, inPad);
+        String hint = spec.timeUnit()
+                ? "输入数字(单位:" + (byMinute ? "分钟" : "秒") + "),也可带单位:如 15分 / 90秒"
+                : "输入 " + spec.min() + "-" + spec.max() + " 的数字";
+        input.setHint(hint);
+        android.widget.FrameLayout holder = new android.widget.FrameLayout(this);
+        int hPad = dp(24);
+        holder.setPadding(hPad, dp(10), hPad, 0);
+        holder.addView(input, new android.widget.FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("设置" + name)
+                .setView(holder)
+                .setPositiveButton("确定", new android.content.DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(android.content.DialogInterface d, int which) {
+                        int v = parseStepperInput(input.getText().toString(), spec);
+                        if (v < 0) {
+                            Toast.makeText(MainActivity.this, "输入无效", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        spec.set(clamp(v, spec.min(), spec.max()));
+                        renderPanels();
+                    }
+                })
+                .setNegativeButton("取消", null)
+                .show();
+    }
+
+    /** 解析输入:时间行支持 "20"/"15分"/"90秒"(含 m/s 后缀),数字按秒返回;无效返回 -1。 */
+    private static int parseStepperInput(String s, StepperSpec spec) {
+        if (s == null) return -1;
+        s = s.trim().toLowerCase().replace("分钟", "分");
+        long mult = 1;
+        if (spec.timeUnit()) {
+            if (s.endsWith("分") || s.endsWith("m")) {
+                mult = 60;
+                s = s.replaceAll("分|m$", "");
+            } else if (s.endsWith("秒") || s.endsWith("s")) {
+                s = s.replaceAll("秒|s$", "");
+            }
+        }
+        try {
+            long v = Long.parseLong(s.trim()) * mult;
+            return v > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) v;
+        } catch (NumberFormatException e) {
+            return -1;
+        }
     }
 
     private Button roundBtn(String text) {

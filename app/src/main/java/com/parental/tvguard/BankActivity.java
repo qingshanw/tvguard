@@ -212,18 +212,18 @@ public class BankActivity extends Activity {
                 ? ("⚠ " + err)
                 : ("当前生效题库共 " + total + " 题"));
 
-        // 内嵌四年级题库(禁用=不参与出题,可随时恢复)
+        // 内嵌四年级题库(禁用=不参与出题可随时恢复;删除=停用并清除其统计,二次确认)
         final boolean grade4On = QuestionBank.isGrade4Enabled(this);
         LinearLayout emb = new LinearLayout(this);
         emb.setOrientation(LinearLayout.HORIZONTAL);
         emb.setGravity(Gravity.CENTER_VERTICAL);
         emb.setPadding(dp(14), dp(12), dp(14), dp(12));
-        emb.setBackground(roundBg(grade4On ? "#0E2B22" : MainActivity.CARD, dp(12)));
+        emb.setBackground(roundBg(grade4On ? "#153E2B" : "#3A3A3A", dp(12)));
 
         TextView embLabel = new TextView(this);
         embLabel.setText((grade4On ? "📗 " : "📕 ") + "四年级题库(内嵌 100 题)"
                 + (grade4On ? "" : " · 已禁用"));
-        embLabel.setTextColor(Color.WHITE);
+        embLabel.setTextColor(grade4On ? Color.WHITE : Color.parseColor("#9E9E9E"));
         embLabel.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(26));
         emb.addView(embLabel, new LinearLayout.LayoutParams(0,
                 ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
@@ -247,8 +247,47 @@ public class BankActivity extends Activity {
                 refresh();
             }
         });
-        emb.addView(embBtn, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        LinearLayout.LayoutParams embBtnLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        embBtnLp.leftMargin = dp(8);
+        emb.addView(embBtn, embBtnLp);
+
+        // 内嵌题库无法真正删除文件,删除=停用并清除其答题统计(可用「启用」恢复)
+        Button embDel = new Button(this, null, android.R.attr.borderlessButtonStyle);
+        boolean grade4Armed = "__grade4__".equals(pendingDeleteName);
+        embDel.setText(grade4Armed ? "确认删除?" : "删除");
+        embDel.setTextColor(Color.WHITE);
+        embDel.setAllCaps(false);
+        embDel.setIncludeFontPadding(false);
+        embDel.setPadding(dp(20), dp(8), dp(20), dp(8));
+        embDel.setMinimumHeight(dp(56));
+        embDel.setBackground(roundBg(grade4Armed ? "#FF5722" : "#B71C1C", dp(12)));
+        embDel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if ("__grade4__".equals(pendingDeleteName)) {
+                    QuestionBank.setGrade4Enabled(BankActivity.this, false);
+                    new QuestionBank(BankActivity.this).stats().removeBank("四年级题库");
+                    MonitorService.reloadBank(BankActivity.this);
+                    pendingDeleteName = null;
+                    Toast.makeText(BankActivity.this,
+                            "内嵌题库已停用,其答题统计已清除(可用「启用」恢复)",
+                            Toast.LENGTH_LONG).show();
+                    refresh();
+                } else {
+                    pendingDeleteName = "__grade4__";
+                    ((Button) v).setText("确认删除?");
+                    ((Button) v).setBackground(roundBg("#FF5722", dp(12)));
+                    Toast.makeText(BankActivity.this,
+                            "内嵌题库将被停用并清除其答题统计,再点一次确认",
+                            Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+        LinearLayout.LayoutParams embDelLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        embDelLp.leftMargin = dp(8);
+        emb.addView(embDel, embDelLp);
         listBox.addView(emb, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
@@ -280,7 +319,7 @@ public class BankActivity extends Activity {
             row.setOrientation(LinearLayout.HORIZONTAL);
             row.setGravity(Gravity.CENTER_VERTICAL);
             row.setPadding(dp(14), dp(12), dp(14), dp(12));
-            row.setBackground(roundBg(enabled ? MainActivity.CARD : "#2A2A2A", dp(12)));
+            row.setBackground(roundBg(enabled ? "#153E2B" : "#3A3A3A", dp(12)));
             LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             rp.topMargin = dp(10);
@@ -293,6 +332,7 @@ public class BankActivity extends Activity {
             label.setTextColor(enabled ? Color.WHITE : Color.parseColor("#9E9E9E"));
             label.setTextSize(TypedValue.COMPLEX_UNIT_PX, dp(26));
             label.setSingleLine(true);
+            label.setEllipsize(android.text.TextUtils.TruncateAt.END);
             row.addView(label, new LinearLayout.LayoutParams(0,
                     ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
@@ -348,8 +388,10 @@ public class BankActivity extends Activity {
                     }
                 }
             });
-            row.addView(del, new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            LinearLayout.LayoutParams delLp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            delLp.leftMargin = dp(8);
+            row.addView(del, delLp);
 
             listBox.addView(row);
         }
