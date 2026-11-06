@@ -180,6 +180,7 @@ public class MonitorService extends Service {
                 pendingSince = 0;
                 prefs.putInt(Prefs.KEY_QUIZ_PENDING, 0);
                 prefs.putInt(Prefs.KEY_WATCHED, prefs.intervalSec() / 2);
+                notifyBlocked(); // 提醒家长去授权
             }
             return;
         }
