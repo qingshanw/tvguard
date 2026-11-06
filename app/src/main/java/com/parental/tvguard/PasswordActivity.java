@@ -132,7 +132,11 @@ public class PasswordActivity extends Activity {
         // 显式固定高度,彻底不受 Button 主题 minHeight 影响
         inputRow.addView(ok, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, dp(44)));
-        root.addView(inputRow, matchWrap(dp(0), dp(12)));
+        // 输入框整体定高(约按钮的1.6倍),按钮嵌在框内右端,高度比例恒定
+        LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(72));
+        rowLp.topMargin = dp(12);
+        root.addView(inputRow, rowLp);
 
         tvError = new TextView(this);
         tvError.setTextColor(Color.parseColor("#E57373"));
